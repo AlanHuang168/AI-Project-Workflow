@@ -30,7 +30,9 @@ tmp/
 coverage/
 
 # Local workflow state created when this repo is used as a target project
-.ai-workflow/
+# (.ai-workflow/* with a negation: a plain '.ai-workflow/' directory exclude
+# would make the '!' re-include ineffective)
+.ai-workflow/*
 !.ai-workflow/state.json
 docs/PRD.md
 docs/ARCH.md
@@ -59,8 +61,3 @@ docs/IMPL.md
 .npm-cache-i18n-check
 .npm-cache-release-check
 
-.vscode/
-
-.idea/
-
-.ai-workflow/

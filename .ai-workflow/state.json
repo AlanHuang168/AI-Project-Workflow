@@ -1,0 +1,21 @@
+{
+  "workflowVersion": "1.0.0",
+  "projectName": "AI-Project-Workflow",
+  "currentStage": "review",
+  "completedStages": [
+    "impl"
+  ],
+  "blocked": false,
+  "blockReason": "",
+  "documents": {
+    "prd": "missing",
+    "arch": "missing",
+    "sdd": "missing",
+    "test": "missing",
+    "review": "missing",
+    "deploy": "missing",
+    "retro": "missing"
+  },
+  "skippedStages": [],
+  "lastUpdatedAt": "2026-07-14T14:19:36.693Z"
+}
