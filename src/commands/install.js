@@ -1,10 +1,25 @@
-import { basename, join } from "node:path";
-import { PLATFORM_CHOICES } from "../lib/constants.js";
+import { basename, join, relative, sep } from "node:path";
+import { PLATFORM_CHOICES, PLATFORM_DOT_DIRS } from "../lib/constants.js";
 import { expandPlatforms } from "../lib/adapters.js";
 import { copyFileSafe, copyTreeSafe, writeFileSafe } from "../lib/safe-copy.js";
 import { initialState } from "../lib/state.js";
-import { exists, isDirectory } from "../lib/fs-utils.js";
+import { exists, isDirectory, listFiles } from "../lib/fs-utils.js";
 import { ROOT, rel } from "../lib/path-utils.js";
+
+// Adapter dot-directories (.cursor/, .trae/, ...) must be installed at the
+// project root because that is the only location the tools load them from.
+// Everything else in an adapter (README notes) stays under adapters/<platform>/.
+async function installAdapter(platform, target, context) {
+  const source = join(ROOT, "adapters", platform);
+  if (!(await exists(source))) return;
+  const dotDir = PLATFORM_DOT_DIRS[platform];
+  for (const file of await listFiles(source)) {
+    const relPath = relative(source, file);
+    const inDotDir = dotDir && (relPath === dotDir || relPath.startsWith(`${dotDir}${sep}`));
+    const destination = inDotDir ? join(target, relPath) : join(target, "adapters", platform, relPath);
+    await copyFileSafe(file, destination, context);
+  }
+}
 
 export async function installCommand(target, options = {}) {
   const platform = options.platform ?? "codex";
@@ -27,8 +42,7 @@ export async function installCommand(target, options = {}) {
   );
 
   for (const item of expandPlatforms(platform)) {
-    const source = join(ROOT, "adapters", item);
-    if (await exists(source)) await copyTreeSafe(source, join(target, "adapters", item), context);
+    await installAdapter(item, target, context);
   }
 
   const prefix = options.dryRun ? "Would install files:" : "Installed files:";

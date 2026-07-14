@@ -1,13 +1,8 @@
-import { readdir } from "node:fs/promises";
-import { join } from "node:path";
 import { readState } from "../lib/state.js";
-import { isDirectory } from "../lib/fs-utils.js";
+import { presentPlatforms } from "../lib/adapters.js";
 
 async function detectPlatforms(target) {
-  const adapters = join(target, "adapters");
-  if (!(await isDirectory(adapters))) return [];
-  const entries = await readdir(adapters, { withFileTypes: true });
-  return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  return (await presentPlatforms(target)).sort();
 }
 
 export async function statusCommand(target) {
