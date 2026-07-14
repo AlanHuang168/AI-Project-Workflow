@@ -24,7 +24,13 @@ test("init creates an installable workflow project", async () => {
   assert.equal(state.projectName, "demo");
   assert.equal(state.currentStage, "init");
   assert.match(await readFile(join(target, "AGENTS.md"), "utf8"), /AI Project Workflow/);
-  assert.match(await readFile(join(target, "adapters", "cursor", ".cursor", "rules", "ai-sdd.mdc"), "utf8"), /AUTO-GENERATED/);
+  // Adapter dot-directories are installed at the project root, the only
+  // location the tools actually load them from.
+  const mdc = await readFile(join(target, ".cursor", "rules", "ai-sdd.mdc"), "utf8");
+  assert.match(mdc, /AUTO-GENERATED/);
+  assert.match(mdc, /^---\n/, "frontmatter must start on the first line");
+  assert.match(await readFile(join(target, ".cursor", "skills", "prd", "SKILL.md"), "utf8"), /AUTO-GENERATED/);
+  await assert.rejects(readFile(join(target, "adapters", "cursor", ".cursor", "rules", "ai-sdd.mdc"), "utf8"), { code: "ENOENT" });
   assert.equal(await main(["status", target]), 0);
   assert.equal(await main(["validate", target]), 0);
 });
