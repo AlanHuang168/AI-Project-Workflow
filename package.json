@@ -1,0 +1,43 @@
+{
+  "name": "@dayahs/ai-project-workflow",
+  "version": "0.1.0",
+  "description": "A universal AI-native project workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, TRAE, and other AI coding assistants.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "apw": "./bin/apw.js",
+    "ai-project-workflow": "./bin/apw.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test-node/*.test.js",
+    "validate": "node bin/apw.js validate .",
+    "pack:check": "npm pack --dry-run"
+  },
+  "files": [
+    "bin",
+    "src",
+    "core",
+    "adapters",
+    "examples",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "VERSION"
+  ],
+  "keywords": [
+    "ai-sdd",
+    "workflow",
+    "cli"
+  ]
+}

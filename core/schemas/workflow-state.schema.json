@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Project Workflow State",
+  "type": "object",
+  "required": [
+    "workflowVersion",
+    "projectName",
+    "currentStage",
+    "completedStages",
+    "blocked",
+    "blockReason",
+    "documents",
+    "lastUpdatedAt"
+  ],
+  "properties": {
+    "workflowVersion": { "type": "string" },
+    "projectName": { "type": "string" },
+    "currentStage": {
+      "type": "string",
+      "enum": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"]
+    },
+    "completedStages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"]
+      }
+    },
+    "blocked": { "type": "boolean" },
+    "blockReason": { "type": "string" },
+    "documents": {
+      "type": "object",
+      "required": ["prd", "arch", "sdd", "test", "review", "deploy", "retro"],
+      "properties": {
+        "prd": { "enum": ["missing", "draft", "complete", "skipped"] },
+        "arch": { "enum": ["missing", "draft", "complete", "skipped"] },
+        "sdd": { "enum": ["missing", "draft", "complete", "skipped"] },
+        "test": { "enum": ["missing", "draft", "complete", "skipped"] },
+        "review": { "enum": ["missing", "draft", "complete", "skipped"] },
+        "deploy": { "enum": ["missing", "draft", "complete", "skipped"] },
+        "retro": { "enum": ["missing", "draft", "complete", "skipped"] }
+      },
+      "additionalProperties": false
+    },
+    "skippedStages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "reason", "approvedByUser"],
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"]
+          },
+          "reason": { "type": "string" },
+          "approvedByUser": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "lastUpdatedAt": {
+      "type": "string",
+      "description": "ISO 8601 timestamp"
+    }
+  },
+  "additionalProperties": false
+}

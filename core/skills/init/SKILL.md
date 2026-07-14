@@ -1,0 +1,87 @@
+---
+name: init
+description: Initialize workflow state and the minimal document structure for a target project. Use when the user starts AI Project Workflow or invokes /init.
+version: 1.0.0
+stage: init
+---
+
+# Goal
+
+Create the workflow state file and minimal project structure needed to start the eight-stage process.
+
+# Use Cases
+
+- The user invokes `/init`.
+- The target project does not have `.ai-workflow/state.json`.
+- Later workflow stages need a state file.
+
+# Preconditions
+
+- The current directory is the target project root, or the user has provided a target path.
+- The user allows file creation in the target project.
+
+# Required Context
+
+- `AGENTS.md`
+- `core/rules/workflow.md`
+- `core/rules/execution-policy.md`
+- Existing project files, if present
+- Optional project metadata such as `README.md`, `package.json`, `pom.xml`, `build.gradle`, `go.mod`, or `Cargo.toml`
+
+# Inputs
+
+- Target project path.
+- Project name, inferred from the directory name unless the user provides one.
+
+# Allowed Changes
+
+- Create `.ai-workflow/state.json`.
+- Create `docs/` if needed.
+- Do not create business requirements, architecture, design, tests, or code.
+
+# Steps
+
+1. Confirm the target project root.
+2. Check whether `.ai-workflow/state.json` already exists.
+3. If state exists, read it and report the current stage instead of overwriting it.
+4. Infer the project name from the target directory unless the user provided a name.
+5. Create `.ai-workflow/state.json` with:
+   - `workflowVersion`
+   - `projectName`
+   - `currentStage = "init"`
+   - empty `completedStages`
+   - `blocked = false`
+   - empty `blockReason`
+   - document states set to `missing`
+   - empty `skippedStages`
+   - `lastUpdatedAt` as an ISO 8601 timestamp
+6. Create `docs/` if it does not exist.
+7. Report created files and the next stage, `prd`.
+
+# Outputs
+
+- `.ai-workflow/state.json`
+- `docs/`
+- Initialization completion report
+
+# Acceptance Criteria
+
+- `docs/` exists.
+- `.ai-workflow/state.json` is valid JSON.
+- State includes project name, current stage, completed stages, document states, and update time.
+- No unconfirmed business requirements were generated.
+
+# Stop Conditions
+
+- The user does not allow file creation.
+- The target project root cannot be determined.
+- The state file cannot be written.
+
+# Rollback Rules
+
+- If initialization data is wrong, revise `.ai-workflow/state.json` only after the user asks.
+- If the user requests reinitialization, preserve or back up the existing state before writing a new one.
+
+# Completion Report
+
+Report the current stage, created files, commands executed, verification results, incomplete work, risks, and next stage `prd`.

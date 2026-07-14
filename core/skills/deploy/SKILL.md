@@ -1,0 +1,80 @@
+---
+name: deploy
+description: Prepare deployment instructions, release checks, verification, monitoring, and rollback. Use when the project is ready for deployment or when the user invokes /deploy.
+version: 1.0.0
+stage: deploy
+---
+
+# Goal
+
+Produce a deployment guide that can be executed and verified for the target environment.
+
+# Use Cases
+
+- The user invokes `/deploy`.
+- Review is complete and the project needs release instructions.
+- The user asks for deployment, release, rollback, or operational verification guidance.
+
+# Preconditions
+
+- `review` is complete, or the user explicitly approves skipping review and records the reason.
+- Build and runtime requirements are known.
+
+# Required Context
+
+- `AGENTS.md`
+- `.ai-workflow/state.json`
+- `core/templates/DEPLOY.template.md`
+- `docs/PRD.md`
+- `docs/ARCH.md`
+- `docs/SDD.md`
+- `docs/TEST.md`
+- `docs/REVIEW.md`
+- Relevant build, configuration, and deployment files
+
+# Inputs
+
+- Target environment.
+- Build and runtime constraints.
+- User-provided deployment requirements.
+
+# Allowed Changes
+
+- `docs/DEPLOY.md`
+- Necessary deployment configuration when explicitly within scope
+- `.ai-workflow/state.json`
+
+# Steps
+
+1. Read review results, architecture, build files, and deployment constraints.
+2. Identify environment requirements, configuration, secrets handling, build steps, deployment steps, verification, monitoring, and rollback.
+3. Do not invent credentials or claim access to systems that were not verified.
+4. Write `docs/DEPLOY.md`.
+5. Run available deployment-related validation if it is safe and in scope.
+6. Update workflow state: `documents.deploy = "complete"`, add `deploy` to `completedStages`, set `currentStage = "retro"`, and update the timestamp.
+
+# Outputs
+
+- `docs/DEPLOY.md`
+- Updated `.ai-workflow/state.json`
+
+# Acceptance Criteria
+
+- DEPLOY includes environment requirements, configuration, build, deployment, migration, verification, monitoring, rollback, and release checklist.
+- Secrets are not written into the repository.
+- Verification results are reported honestly.
+
+# Stop Conditions
+
+- Target environment is unknown and deployment steps would be speculative.
+- Required secrets or credentials are unavailable.
+- The user asks to perform a risky deployment without approval.
+
+# Rollback Rules
+
+- If deployment design exposes architecture gaps, return to `hld`.
+- If release checks expose implementation defects, return to `impl` or `review` as appropriate.
+
+# Completion Report
+
+Report the current stage, modified files, generated documents, commands executed, verification results, incomplete work, risks, and next stage `retro`.

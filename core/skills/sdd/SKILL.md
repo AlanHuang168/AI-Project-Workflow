@@ -1,0 +1,82 @@
+---
+name: sdd
+description: Create detailed design and test design from PRD and Architecture, covering interfaces, data structures, database design, module responsibilities, state transitions, error handling, security, and tests. Use when the user asks for detailed design or invokes /sdd.
+version: 1.0.0
+stage: sdd
+---
+
+# Goal
+
+Produce `docs/SDD.md` and `docs/TEST.md` with enough detail to guide implementation and verification.
+
+# Use Cases
+
+- The user invokes `/sdd`.
+- The user asks to create SDD and Test Plan.
+- Architecture is approved and must be translated into interfaces, data, state, and tests.
+
+# Preconditions
+
+- `docs/PRD.md` exists and is not empty.
+- `docs/ARCH.md` exists and is not empty.
+- Workflow state shows `hld` complete unless the user explicitly approves a skip and the reason is recorded.
+
+# Required Context
+
+- `AGENTS.md`
+- `.ai-workflow/state.json`
+- `core/rules/document-priority.md`
+- `core/templates/SDD.template.md`
+- `core/templates/TEST.template.md`
+- `docs/PRD.md`
+- `docs/ARCH.md`
+
+# Inputs
+
+- Approved PRD and Architecture.
+- User-provided implementation boundaries, compatibility needs, and test environment notes.
+
+# Allowed Changes
+
+- `docs/SDD.md`
+- `docs/TEST.md`
+- `.ai-workflow/state.json`
+- Do not write business code.
+
+# Steps
+
+1. Read PRD and Architecture and confirm that requirements, architecture, and interface contracts are consistent.
+2. Design module responsibilities, interfaces, data structures, database design, state transitions, error handling, security design, logging and observability, compatibility, and implementation order.
+3. Use pseudocode or flow descriptions for key algorithms. If signatures are needed, treat them as contracts, not implementation.
+4. Design success, boundary, and failure tests for each key interface.
+5. Create acceptance mapping from requirements to tests.
+6. Write both `docs/SDD.md` and `docs/TEST.md`.
+7. Update workflow state: `documents.sdd = "complete"`, `documents.test = "complete"`, add `sdd` to `completedStages`, set `currentStage = "impl"`, and update the timestamp.
+
+# Outputs
+
+- `docs/SDD.md`
+- `docs/TEST.md`
+- Updated `.ai-workflow/state.json`
+
+# Acceptance Criteria
+
+- SDD is detailed enough for implementation without guessing business logic.
+- TEST covers core acceptance criteria.
+- Every P0 feature has implementation design and test mapping.
+- No new business behavior outside PRD and Architecture is introduced.
+
+# Stop Conditions
+
+- PRD or Architecture is missing.
+- Architecture conflicts with PRD and the authoritative version cannot be determined.
+- Key interface or data boundaries are unclear.
+
+# Rollback Rules
+
+- If Architecture is missing required components, return to `hld`.
+- If requirements are missing, return to `prd`.
+
+# Completion Report
+
+Report the current stage, modified files, generated documents, commands executed, verification results, incomplete work, risks, and next stage `impl`.
