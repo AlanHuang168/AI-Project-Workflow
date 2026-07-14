@@ -7,6 +7,19 @@ function generatedHeader(root, source) {
   return `${GENERATED_HEADER}<!-- SOURCE: ${rel(root, source)} -->\n\n`;
 }
 
+// Generated files normally start with GENERATED_HEADER, but files that need
+// YAML frontmatter on the first line (for example Cursor .mdc rules) carry
+// the header immediately after the frontmatter block instead.
+const FRONTMATTER_THEN_HEADER_RE = /^---\n[^]*?\n---\n\n?<!-- AUTO-GENERATED /;
+
+function isGeneratedContent(text) {
+  return (
+    text.startsWith(GENERATED_HEADER) ||
+    text.startsWith(LEGACY_GENERATED_HEADER) ||
+    FRONTMATTER_THEN_HEADER_RE.test(text)
+  );
+}
+
 async function renderSkill(root, stage) {
   const source = join(root, "core", "skills", stage, "SKILL.md");
   return [source, `${generatedHeader(root, source)}${await readText(source)}`];
@@ -26,7 +39,7 @@ export async function plannedFiles(root, platform) {
     const rule = join(base, ".cursor", "rules", "ai-sdd.mdc");
     files.set(
       rule,
-      `${GENERATED_HEADER}<!-- SOURCE: AGENTS.md + core/rules -->\n\n---\ndescription: AI Project Workflow rules for Cursor\nalwaysApply: true\n---\n\n# AI Project Workflow Cursor Adapter\n\nBefore starting a task, read \`AGENTS.md\`, \`core/rules/\`, \`core/skills/<stage>/SKILL.md\`, and \`.ai-workflow/state.json\` from the project root.\nThis file is a lightweight entry point. The canonical source is \`core/\`.\n`
+      `---\ndescription: AI Project Workflow rules for Cursor\nalwaysApply: true\n---\n\n${GENERATED_HEADER}<!-- SOURCE: AGENTS.md + core/rules -->\n\n# AI Project Workflow Cursor Adapter\n\nBefore starting a task, read \`AGENTS.md\`, \`core/rules/\`, \`core/skills/<stage>/SKILL.md\`, and \`.ai-workflow/state.json\` from the project root.\nThis file is a lightweight entry point. The canonical source is \`core/\`.\n`
     );
     skillRoot = join(base, ".cursor", "skills");
     agentRoot = join(base, ".cursor", "agents");
@@ -115,7 +128,7 @@ export async function syncAdapters(root, options = {}) {
       if (await exists(path)) {
         const old = await readText(path);
         if (old === content) continue;
-        if (!old.startsWith(GENERATED_HEADER) && !old.startsWith(LEGACY_GENERATED_HEADER)) {
+        if (!isGeneratedContent(old)) {
           messages.push(`FAIL refusing to overwrite user file: ${rel(root, path)}`);
           ok = false;
           continue;
