@@ -1,196 +1,231 @@
 # AI Project Workflow
 
+[![CI](https://github.com/AlanHuang168/AI-Project-Workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AlanHuang168/AI-Project-Workflow/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/%40dayahs%2Fai-project-workflow.svg)](https://www.npmjs.com/package/@dayahs/ai-project-workflow)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 [English](./README.md)
 
-## Project Overview
+一套面向 Cursor、Claude Code、Codex、Qoder、CodeBuddy、TRAE 以及其他 AI 编码助手的通用 AI 原生软件交付工作流。一份规范的 `core/` 单一真相源、每个工具一层轻量适配、一个跟踪进度的状态文件,以及负责安装与校验的 CLI。
 
-AI Project Workflow 是一套面向 Cursor、Claude Code、Codex、Qoder、CodeBuddy、TRAE 以及其他 AI 编码助手的通用 AI 原生项目工作流。它以 `core/` 作为唯一真实源，并为不同工具生成轻量适配层。
+## 为什么需要它
 
-## Why AI Project Workflow
+当需求、架构、设计和测试还不清晰时,AI 编码助手就急着写代码。结果是:没人要的功能、悄悄扩大的范围,以及从未真正运行过的测试被报告成「全部通过」。
 
-当需求、架构、设计和测试不清晰时，AI 编码助手很容易过快进入实现。这个工作流把每个阶段显式化，将产物写入文件，跟踪状态，并要求诚实报告验证结果。
+AI Project Workflow 把交付过程显式化:
 
-## Key Features
+- 每个阶段都有 Skill 契约:前置条件、允许的改动、产出物、停止条件。
+- 每个交付物都必须写入 `docs/` 下的文件,禁止只在对话里打印。
+- 进度记录在 `.ai-workflow/state.json` 中,逐阶段设门禁。
+- 验证必须诚实报告:真正执行过的命令、真实结果、遗留风险。
 
-- 从初始化到复盘的八阶段工作流。
-- 以 `core/` 为中心管理规则、Skills、Agents、模板和 schema。
-- 从唯一真实源生成平台适配器。
-- 默认不覆盖用户文件，只有使用 `--force` 才覆盖。
-- 纯 Node.js CLI，不需要 Python。
-
-## Workflow Stages
+## 工作原理
 
 ```text
-init -> prd -> hld -> sdd -> impl -> review -> deploy -> retro
+                core/  (唯一规范源)
+                ├── rules/       全局工作规则
+                ├── skills/      每阶段一份契约
+                ├── agents/      角色定义
+                ├── templates/   文档骨架
+                └── schemas/     状态文件 schema
+                        |
+        apw init <目标目录> --platform <工具>
+                        v
+    your-project/
+    ├── AGENTS.md, CLAUDE.md            AI 工具读取的入口
+    ├── core/                           规范源的完整副本
+    ├── .cursor/ 或 .trae/ 或 ...       适配文件,放在工具真正加载的位置
+    └── .ai-workflow/state.json         工作流状态
 ```
 
-文档优先级：
+约束是基于提示词的:适配层指示 AI 先读当前阶段的 Skill、核对上游文档、更新状态文件,然后才能推进。CLI 负责校验文件(`apw validate`、`apw status`);AI 遵守契约是因为每个入口都这样要求它。如果 AI 跑偏了,让它重新阅读 `AGENTS.md`。
+
+## 快速开始
+
+```bash
+npx @dayahs/ai-project-workflow init . --platform cursor
+```
+
+或全局安装:
+
+```bash
+npm install -g @dayahs/ai-project-workflow
+apw init my-app --platform cursor
+```
+
+支持的平台:`cursor`、`trae`、`qoder`、`codebuddy`、`claude-code`、`codex`、`all`。
+
+## 端到端:你的第一个项目
+
+安装之后实际会发生什么——以在 Cursor 里做一个待办清单 Web 应用为例。
+
+1. **把工作流装进新项目:**
+
+   ```bash
+   npx @dayahs/ai-project-workflow init todo-app --platform cursor
+   ```
+
+   `todo-app/` 现在包含 `AGENTS.md`、`core/`、`.cursor/` 和 `.ai-workflow/state.json`(`currentStage: "init"`)。
+
+2. **启动第一个阶段。** 在 Cursor 中打开 `todo-app`,对 AI 说:
+
+   ```text
+   /prd 我要做一个面向小团队的待办清单 Web 应用
+   ```
+
+   `.cursor/rules/ai-sdd.mdc` 规则始终挂载,AI 会先读 `core/skills/prd/SKILL.md`,先反问澄清,然后把产出写入 `docs/PRD.md` 并更新状态文件。
+
+3. **人工审查与门禁。** 你自己读一遍 `docs/PRD.md`。AI 在每个阶段结束后都会停下;没有你的确认,流程不会前进。
+
+4. **逐阶段继续:** `/hld` 产出 `docs/ARCH.md`,`/sdd` 产出 `docs/SDD.md` 和 `docs/TEST.md`,`/impl` 产出代码与真实的验证运行,`/review` 产出 `docs/REVIEW.md`,然后是 `/deploy` 和 `/retro`。
+
+5. **随时查看进度:**
+
+   ```bash
+   apw status .
+   apw validate .
+   ```
+
+每一步 AI 都必须报告:改动的文件、执行的命令、真实的验证结果、遗留的风险。
+
+## 八个阶段
+
+| 阶段 | 命令 | 读取 | 产出 | 你确认什么 |
+|---|---|---|---|---|
+| init | `/init` | 你的描述 | 项目骨架、状态文件 | 项目范围 |
+| prd | `/prd` | 你的描述 | `docs/PRD.md` | 需求 |
+| hld | `/hld` | PRD | `docs/ARCH.md` | 架构 |
+| sdd | `/sdd` | PRD、ARCH | `docs/SDD.md`、`docs/TEST.md` | 详细设计 |
+| impl | `/impl` | SDD、TEST | 代码 + 验证结果 | 实现 |
+| review | `/review` | SDD、代码 | `docs/REVIEW.md` | 问题与修复 |
+| deploy | `/deploy` | REVIEW | `docs/DEPLOY.md` | 上线 |
+| retro | `/retro` | 全部 | `docs/RETRO.md` | 经验教训 |
+
+**文档优先级——冲突时以谁为准:**
 
 ```text
 PRD -> Architecture -> SDD -> Test Plan -> Code
 ```
 
-## Supported AI Coding Tools
+上游文档是权威。代码与 SDD 不一致时,要么改代码,要么先正式修订 SDD——绝不允许悄悄偏离。阶段只有在你明确批准时才能跳过,跳过及其原因会记录到状态文件的 `skippedStages` 中。
 
-- Cursor
-- Claude Code
-- Codex
-- Qoder
-- CodeBuddy
-- TRAE
+## 各平台安装说明
 
-## Installation
+每个工具装了什么、如何触发工作流:
 
-直接使用 npm：
+| 工具 | 安装的文件 | 加载方式 |
+|---|---|---|
+| Cursor | `.cursor/rules/ai-sdd.mdc`(始终生效)、`.cursor/skills/`、`.cursor/agents/` | 规则自动挂载到每次对话,并把 AI 指向当前阶段的 Skill。在对话里输入阶段命令(如 `/prd`)。 |
+| Claude Code | `CLAUDE.md`、`AGENTS.md`、`core/` | 会话启动时自动读取 `CLAUDE.md`。 |
+| Codex | `AGENTS.md`、`core/` | Codex 原生读取 `AGENTS.md`。 |
+| TRAE | `.trae/rules.md`、`.trae/skills/`、`.trae/agents/` | 把 `.trae/rules.md` 添加为项目规则。TRAE 的自定义智能体在其 UI 中配置——创建时把 `.trae/agents/` 里的角色定义粘贴进去。 |
+| Qoder | `.qoder/skills/`、`.qoder/agents/` | 在提示词中引用 Skill 文件,或依赖根目录的 `AGENTS.md`。 |
+| CodeBuddy | `.codebuddy/skills/`、`.codebuddy/agents/`、适配说明 | 最小兼容适配;回退到 `AGENTS.md`。 |
 
-```bash
-npx @dayahs/ai-project-workflow init . --platform cursor
+阶段命令(`/prd`、`/impl` 等)是规则约定的提示词惯例,在任何对话式工具中都可用,包括不支持原生斜杠命令的工具。
+
+## 工作流状态
+
+目标项目通过 `.ai-workflow/state.json` 跟踪进度:
+
+```json
+{
+  "workflowVersion": "1.0.0",
+  "projectName": "todo-app",
+  "currentStage": "sdd",
+  "completedStages": ["init", "prd", "hld"],
+  "blocked": false,
+  "blockReason": "",
+  "documents": { "prd": "complete", "arch": "complete", "sdd": "draft" },
+  "skippedStages": [
+    { "stage": "deploy", "reason": "库项目,无需部署", "approvedByUser": true }
+  ],
+  "lastUpdatedAt": "2026-07-14T12:00:00.000Z"
+}
 ```
 
-或全局安装：
+schema 位于 `core/schemas/workflow-state.schema.json`。AI 在每个阶段结束时更新此文件;`apw status` 负责读取展示。
+
+## CLI 参考
 
 ```bash
-npm install -g @dayahs/ai-project-workflow
-```
-
-## Quick Start
-
-```bash
-npx @dayahs/ai-project-workflow init . --platform cursor
-npx @dayahs/ai-project-workflow status .
-npx @dayahs/ai-project-workflow validate .
-```
-
-全局安装后：
-
-```bash
-apw init . --platform cursor
-apw status .
-apw validate .
-```
-
-## CLI Commands
-
-```bash
-apw init [target]
-apw install [target]
-apw sync [target]
-apw validate [target]
-apw status [target]
-apw migrate [target]
+apw init [target] --platform <tool>   # 需要时创建目标目录,然后安装
+apw install [target] --platform <tool># 向已有目录安装工作流文件
+apw sync [target] [--platform <tool>] # 从 core/ 重新生成适配文件
+apw validate [target]                 # 校验结构、frontmatter、模板、适配同步
+apw status [target]                   # 打印工作流状态与已安装平台
+apw migrate [target] [--apply]        # 迁移旧目录布局(默认只预览)
 apw --help
 apw --version
 ```
 
-支持的平台：
+安全行为:
+
+- 绝不覆盖用户已有文件。冲突会在原文件旁生成 `.ai-sdd.new` 供你对比。
+- `--force` 表示有意覆盖;`--dry-run` 预览所有写入而不落盘。
+- 生成的适配文件带 `AUTO-GENERATED` 标记;要改请改 `core/` 然后运行 `apw sync`。
+
+## 常见问题
+
+**AI 无视工作流,直接开始写代码。**
+让它先读 `AGENTS.md` 和当前阶段的 Skill 再继续。确认适配层真的被加载了(Cursor:对话上下文中出现 `ai-sdd` 规则)。约束是基于提示词的,偶尔需要人工拉回是正常的。
+
+**能跳过某个阶段吗,比如 deploy?**
+可以——明确说出来即可。AI 会把跳过及你的理由记录到 `skippedStages`,后续阶段视其为已批准。
+
+**同一个项目能同时用两个工具吗?**
+可以。用 `--platform all` 安装(或对另一个平台再跑一次 `apw install`)。各适配层目录独立,互不干扰。
+
+**包发新版后如何升级?**
+更新包,然后在项目里重新运行 `apw install .`——你改过的文件会被保留,新内容以 `.ai-sdd.new` 出现。之后运行 `apw validate .`。
+
+**某个阶段做坏了,怎么回退?**
+每个 Skill 都定义了回退规则:设计无法实现回 `sdd`,架构边界错了回 `hld`,需求缺失回 `prd`。先修订上游文档,再重跑下游阶段。
+
+## 与同类方案的对比
+
+- **GitHub Spec Kit** 聚焦规格优先开发,阶段更少。AI Project Workflow 增加了多工具适配、机器可读的状态文件和安装/校验 CLI。
+- **BMAD-METHOD** 以丰富的多智能体角色扮演为核心。AI Project Workflow 保持角色轻量,把契约放进单个智能体就能执行的分阶段 Skill 里。
+- **纯规则文件**(单个 `AGENTS.md` 或规则文档)只能陈述原则,无法设阶段门禁、跟踪状态。本项目补上了分阶段契约、文档模板、状态跟踪与校验。
+
+## 项目结构
 
 ```text
-cursor, trae, qoder, codebuddy, claude-code, codex, all
-```
-
-默认情况下，CLI 不会覆盖用户文件。冲突文件会写成 `.ai-sdd.new`。只有确认需要覆盖时才使用 `--force`。使用 `--dry-run` 可以预览写入计划。
-
-## Platform Usage
-
-- Cursor：使用 `.cursor/rules/ai-sdd.mdc` 以及生成的 Skills 和 Agents。
-- Claude Code：使用 `CLAUDE.md` 作为轻量入口。
-- Codex：主要读取 `AGENTS.md` 和 `core/skills/`。
-- Qoder：使用 `.qoder/skills/` 和 `.qoder/agents/`。
-- CodeBuddy：使用最低兼容适配器，并可回退到 `AGENTS.md`。
-- TRAE：保留八阶段斜杠命令习惯。
-
-## Project Structure
-
-```text
-AGENTS.md
-CLAUDE.md
+AGENTS.md            原生读取该文件的智能体入口
+CLAUDE.md            Claude Code 的轻量入口
 VERSION
-bin/
-src/
-core/
-  agents/
-  rules/
-  schemas/
-  skills/
-  templates/
-adapters/
-examples/
-test-node/
+bin/                 CLI 入口
+src/                 CLI 实现
+core/                规范源:规则、Skill、智能体、模板、schema
+adapters/            生成的适配树,每平台一份
+examples/            最小目标项目
+test-node/           测试套件(node --test)
 ```
 
-`core/` 是唯一真实源。适配器文件应由工具生成，不应手工维护。
+`core/` 是唯一规范源。适配文件是生成物——改 `core/` 后运行 `apw sync . --platform all`。
 
-## Workflow State
+## 扩展
 
-目标项目使用 `.ai-workflow/state.json` 跟踪当前阶段、已完成阶段、文档状态、跳过阶段、阻塞信息和更新时间。
+**新增 Skill:** 创建 `core/skills/<name>/SKILL.md`,带标准 frontmatter 与章节(Goal、Preconditions、Steps、Outputs、Acceptance Criteria、Stop Conditions、Rollback Rules、Completion Report)。若加入核心阶段流,需同步更新 `src/lib/constants.js` 与测试。然后运行 `apw sync . --platform all` 和 `apw validate .`。
 
-schema 位于：
+**新增适配器:** 在 `src/lib/adapters.js` 中添加生成规则,保持 `core/` 为规范源,生成文件标记 `AUTO-GENERATED`,补测试,然后同步并校验。
 
-```text
-core/schemas/workflow-state.schema.json
-```
+完整贡献指南见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## Validation
+## 环境要求
 
-```bash
-apw validate .
-```
+- Node.js >= 20 与 npm。不需要其他运行时。
 
-验证会检查必要结构、Skill frontmatter、模板、schema JSON、Agent 的 Skill 引用、残留术语以及适配器同步状态。
+## 已知限制
 
-## Sync
+- 约束是基于提示词的:CLI 校验文件与状态,但让 AI 遵守流程的是工具侧的上下文(规则、入口文件)。偶尔需要人工把 AI 拉回流程。
+- 工作流提供结构与校验,不能替代项目本身的工程判断。
+- 部署步骤取决于目标项目的技术栈与环境。
 
-```bash
-apw sync . --platform all
-```
+## 参与贡献
 
-同步会从 `core/` 重新生成平台适配器。
+见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## Migration
+## 许可证
 
-```bash
-apw migrate .
-apw migrate . --apply
-```
-
-迁移默认是 dry-run。使用 `--apply` 时，目标项目中的旧布局会移动到该目标项目内的备份目录。
-
-## Adding a Skill
-
-1. 在 `core/skills/<name>/SKILL.md` 添加合法 YAML frontmatter。
-2. 使用标准章节：Goal、Use Cases、Preconditions、Required Context、Inputs、Allowed Changes、Steps、Outputs、Acceptance Criteria、Stop Conditions、Rollback Rules、Completion Report。
-3. 如果该 Skill 属于核心阶段流程，更新 `src/lib/constants.js` 和测试。
-4. 运行 `apw sync . --platform all`。
-5. 运行 `apw validate .`。
-
-## Adding an Adapter
-
-1. 在 `src/lib/adapters.js` 添加生成规则。
-2. 保持 `core/` 作为唯一真实源。
-3. 为生成文件添加 `AUTO-GENERATED` 标记。
-4. 新增或更新测试。
-5. 运行同步和验证。
-
-## Examples
-
-参见 `examples/minimal-project/`。
-
-## Requirements
-
-- Node.js >= 20
-- npm
-- 不需要 Python 运行时
-
-## Known Limitations
-
-- 本包提供工作流文件和验证逻辑，但不能替代具体项目中的工程判断。
-- 部署步骤取决于目标项目的技术栈和环境。
-- 维护者应在公开处理安全问题前配置安全联系方式。
-
-## Contributing
-
-参见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
-
-## License
-
-MIT。参见 [LICENSE](./LICENSE)。
+MIT,见 [LICENSE](./LICENSE)。
