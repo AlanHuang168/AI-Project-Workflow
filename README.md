@@ -42,6 +42,7 @@ Enforcement is prompt-based. The adapter instructs the AI agent to read the acti
 
 > New to Node.js or command-line tools?
 > Read the [Beginner Installation Guide](./docs/getting-started/beginner-guide.md).
+> It walks through installing Node.js, opening a terminal, and running your first `apw init` command step by step.
 
 ## Quick start
 
