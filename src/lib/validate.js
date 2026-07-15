@@ -1,19 +1,22 @@
 import { join } from "node:path";
-import { STAGES, TEMPLATES } from "./constants.js";
-import { checkAdapters } from "./adapters.js";
+import { PLATFORM_DOT_DIRS, STAGES, TEMPLATES } from "./constants.js";
+import { checkAdapters, presentPlatforms } from "./adapters.js";
 import { exists, listFiles, readText } from "./fs-utils.js";
 import { rel } from "./path-utils.js";
+import { loadWorkflowConfig, stageIds } from "./workflow-config.js";
+import { readState } from "./state.js";
 
 const fixedModelTerms = ["so" + "nnet", "o" + "pus", "g" + "pt-4", "g" + "pt-5", "claude" + "-3", "claude" + "-4"];
 const fixedModelRe = new RegExp(`\\b(${fixedModelTerms.map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "i");
 
 export function parseFrontmatter(text) {
-  if (!text.startsWith("---\n")) return {};
-  const end = text.indexOf("\n---", 4);
+  const normalized = text.replace(/^(?:\s*<!--[\s\S]*?-->\s*)+/, "");
+  if (!normalized.startsWith("---\n")) return {};
+  const end = normalized.indexOf("\n---", 4);
   if (end === -1) return {};
   const data = {};
   let currentKey = "";
-  for (const raw of text.slice(4, end).split("\n")) {
+  for (const raw of normalized.slice(4, end).split("\n")) {
     const line = raw.trimEnd();
     if (!line) continue;
     if (line.startsWith("  - ") && currentKey) {
@@ -53,22 +56,63 @@ class Reporter {
   }
 }
 
-async function checkStructure(root, r) {
+async function checkWorkflowConfig(root, r) {
+  const loaded = await loadWorkflowConfig(root);
+  if (loaded.errors.length) {
+    for (const error of loaded.errors) r.fail(error);
+  }
+  return loaded;
+}
+
+function adapterSkillPaths(root, stage, platforms) {
+  const paths = [];
+  for (const platform of platforms) {
+    const dotDir = PLATFORM_DOT_DIRS[platform];
+    if (!dotDir) continue;
+    paths.push(join(root, dotDir, "skills", stage, "SKILL.md"));
+    paths.push(join(root, "adapters", platform, dotDir, "skills", stage, "SKILL.md"));
+  }
+  return paths;
+}
+
+async function skillLookupPaths(root, stage) {
+  const platforms = await presentPlatforms(root);
+  return [
+    rel(root, join(root, ".apw", "skills", stage, "SKILL.md")),
+    ...adapterSkillPaths(root, stage, platforms).map((path) => rel(root, path)),
+    rel(root, join(root, "core", "skills", stage, "SKILL.md"))
+  ];
+}
+
+async function findStageSkill(root, stage) {
+  const projectSkill = join(root, ".apw", "skills", stage, "SKILL.md");
+  if (await exists(projectSkill)) return projectSkill;
+
+  for (const path of adapterSkillPaths(root, stage, await presentPlatforms(root))) {
+    if (await exists(path)) return path;
+  }
+
+  const coreSkill = join(root, "core", "skills", stage, "SKILL.md");
+  if (await exists(coreSkill)) return coreSkill;
+  return null;
+}
+
+async function checkStructure(root, r, config) {
   for (const path of ["AGENTS.md", "CLAUDE.md", "VERSION", "core/rules", "core/skills", "core/agents", "core/templates", "core/schemas"]) {
     if (await exists(join(root, path))) r.pass(`exists ${path}`);
     else r.fail(`missing ${path}`);
   }
-  for (const stage of STAGES) {
-    const path = join(root, "core", "skills", stage, "SKILL.md");
-    if (await exists(path)) r.pass(`skill exists ${stage}`);
-    else r.fail(`missing skill ${stage}`);
+  for (const stage of stageIds(config)) {
+    const path = await findStageSkill(root, stage);
+    if (path) r.pass(`skill exists ${stage}`);
+    else r.fail(`missing skill ${stage}; looked in ${(await skillLookupPaths(root, stage)).join(", ")}`);
   }
 }
 
-async function checkFrontmatter(root, r) {
-  for (const stage of STAGES) {
-    const path = join(root, "core", "skills", stage, "SKILL.md");
-    if (!(await exists(path))) continue;
+async function checkFrontmatter(root, r, config) {
+  for (const stage of stageIds(config)) {
+    const path = await findStageSkill(root, stage);
+    if (!path) continue;
     const fm = parseFrontmatter(await readText(path));
     if (!Object.keys(fm).length) {
       r.fail(`missing frontmatter ${rel(root, path)}`);
@@ -82,7 +126,7 @@ async function checkFrontmatter(root, r) {
   }
 }
 
-async function checkTemplatesSchemaAgents(root, r) {
+async function checkTemplatesSchemaAgents(root, r, config) {
   for (const name of TEMPLATES) {
     const path = join(root, "core", "templates", `${name}.template.md`);
     if ((await exists(path)) && (await readText(path)).trim()) r.pass(`template ${name}`);
@@ -97,7 +141,7 @@ async function checkTemplatesSchemaAgents(root, r) {
     r.fail(`invalid state schema json: ${error.message}`);
   }
 
-  const valid = new Set(STAGES);
+  const valid = new Set([...STAGES, ...stageIds(config)]);
   for (const path of await listFiles(join(root, "core", "agents"))) {
     if (!path.endsWith(".md")) continue;
     const fm = parseFrontmatter(await readText(path));
@@ -105,6 +149,37 @@ async function checkTemplatesSchemaAgents(root, r) {
     const invalid = skills.filter((item) => !valid.has(item));
     if (invalid.length) r.fail(`agent ${path.split("/").pop()} references invalid skills ${JSON.stringify(invalid)}`);
     else r.pass(`agent skills ${path.split("/").pop()}`);
+  }
+}
+
+async function checkStateClosure(root, r, config) {
+  const state = await readState(root);
+  if (!state) return;
+
+  const validStages = new Set(stageIds(config));
+  const protocolVersion = state.workflowProtocolVersion ?? state.workflowVersion;
+  if (protocolVersion !== undefined && typeof protocolVersion !== "string") {
+    r.fail("workflow state protocol version must be a string");
+  }
+  if (!validStages.has(state.currentStage)) r.fail(`currentStage is not configured: ${state.currentStage}`);
+
+  for (const stage of state.completedStages ?? []) {
+    if (!validStages.has(stage)) r.fail(`completedStages contains unconfigured stage: ${stage}`);
+  }
+
+  for (const skipped of state.skippedStages ?? []) {
+    const stage = typeof skipped === "string" ? skipped : skipped.stage;
+    if (!validStages.has(stage)) r.fail(`skippedStages contains unconfigured stage: ${stage}`);
+  }
+
+  if (state.workflowStages !== undefined) {
+    if (!Array.isArray(state.workflowStages) || !state.workflowStages.length) {
+      r.fail("workflowStages must be a non-empty list when present");
+    } else {
+      for (const stage of state.workflowStages) {
+        if (!validStages.has(stage)) r.fail(`workflowStages contains unconfigured stage: ${stage}`);
+      }
+    }
   }
 }
 
@@ -151,9 +226,11 @@ async function checkResidualTerms(root, r) {
 
 export async function validateProject(root, options = {}) {
   const r = new Reporter();
-  await checkStructure(root, r);
-  await checkFrontmatter(root, r);
-  await checkTemplatesSchemaAgents(root, r);
+  const loadedConfig = await checkWorkflowConfig(root, r);
+  await checkStructure(root, r, loadedConfig.config);
+  await checkFrontmatter(root, r, loadedConfig.config);
+  await checkTemplatesSchemaAgents(root, r, loadedConfig.config);
+  await checkStateClosure(root, r, loadedConfig.config);
   await checkReferences(root, r);
   await checkResidualTerms(root, r);
   const adapterResult = await checkAdapters(root, { platform: options.platform });

@@ -1,12 +1,17 @@
 import { join } from "node:path";
-import { WORKFLOW_VERSION } from "./constants.js";
+import { DEFAULT_WORKFLOW_CONFIG, WORKFLOW_VERSION } from "./constants.js";
 import { exists, readText, writeText } from "./fs-utils.js";
+import { stageIds } from "./workflow-config.js";
 
-export function initialState(projectName) {
+export function initialState(projectName, workflowConfig = DEFAULT_WORKFLOW_CONFIG) {
+  const stages = stageIds(workflowConfig);
+  const protocolVersion = workflowConfig.protocolVersion || WORKFLOW_VERSION;
   return {
-    workflowVersion: WORKFLOW_VERSION,
+    workflowVersion: protocolVersion,
+    workflowProtocolVersion: protocolVersion,
+    workflowStages: stages,
     projectName,
-    currentStage: "init",
+    currentStage: stages[0] ?? "init",
     completedStages: [],
     blocked: false,
     blockReason: "",

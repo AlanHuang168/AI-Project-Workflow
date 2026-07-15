@@ -5,6 +5,7 @@ import { copyFileSafe, copyTreeSafe, writeFileSafe } from "../lib/safe-copy.js";
 import { initialState } from "../lib/state.js";
 import { exists, isDirectory, listFiles } from "../lib/fs-utils.js";
 import { ROOT, rel } from "../lib/path-utils.js";
+import { loadWorkflowConfig } from "../lib/workflow-config.js";
 
 // Adapter dot-directories (.cursor/, .trae/, ...) must be installed at the
 // project root because that is the only location the tools load them from.
@@ -29,6 +30,10 @@ export async function installCommand(target, options = {}) {
   if (!(await isDirectory(target)) && !options.allowMissingTarget) {
     return { code: 2, messages: [`FAIL target is not a directory: ${target}`] };
   }
+  const workflowConfig = await loadWorkflowConfig(target);
+  if (workflowConfig.errors.length) {
+    return { code: 2, messages: workflowConfig.errors.map((error) => `FAIL ${error}`) };
+  }
 
   const context = { force: options.force, dryRun: options.dryRun, installed: [], conflicts: [] };
   for (const name of ["AGENTS.md", "CLAUDE.md", "VERSION"]) {
@@ -37,7 +42,7 @@ export async function installCommand(target, options = {}) {
   await copyTreeSafe(join(ROOT, "core"), join(target, "core"), context);
   await writeFileSafe(
     join(target, ".ai-workflow", "state.json"),
-    `${JSON.stringify(initialState(basename(target)), null, 2)}\n`,
+    `${JSON.stringify(initialState(basename(target), workflowConfig.config), null, 2)}\n`,
     context
   );
 
