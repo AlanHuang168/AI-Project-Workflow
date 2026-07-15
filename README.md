@@ -294,3 +294,5 @@ See [CHANGELOG.md](./CHANGELOG.md).
 ## License
 
 MIT. See [LICENSE](./LICENSE).
+
+Built with the AI Project Workflow.
