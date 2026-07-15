@@ -55,6 +55,25 @@ apw init my-app --platform cursor
 
 支持的平台:`cursor`、`trae`、`qoder`、`codebuddy`、`claude-code`、`codex`、`all`。
 
+## 已验证平台
+
+| 平台 | 状态 | 证据 |
+| ---- | ---- | ---- |
+| Cursor | ✅ Verified | [Report](./docs/testing/cursor.md) |
+| Claude Code | ✅ Verified | [Report](./docs/testing/claude-code.md) |
+| Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
+| TRAE | ✅ Verified | [Report](./docs/testing/trae.md) |
+| CodeBuddy | ✅ Verified | [Report](./docs/testing/codebuddy.md) |
+| Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
+
+完整结果见 [compatibility matrix](./docs/testing/compatibility-matrix.md)。
+
+Qoder 待验证：当前测试账号额度不足，尚未完成真实环境验证。
+
+![Cursor workflow verification](./docs/testing/images/cursor/cursor2.png)
+
+![CodeBuddy Skills and Commands recognized](./docs/testing/images/codebuddy/1.png)
+
 ## 端到端:你的第一个项目
 
 安装之后实际会发生什么——以在 Cursor 里做一个待办清单 Web 应用为例。
@@ -155,7 +174,9 @@ stages:
 | Qoder | `.qoder/skills/`、`.qoder/agents/` | 在提示词中引用 Skill 文件,或依赖根目录的 `AGENTS.md`。 |
 | CodeBuddy | `.codebuddy/skills/`、`.codebuddy/agents/`、适配说明 | 最小兼容适配;回退到 `AGENTS.md`。 |
 
-阶段命令(`/prd`、`/impl` 等)是规则约定的提示词惯例,在任何对话式工具中都可用,包括不支持原生斜杠命令的工具。
+Claude Code 已通过自然语言阶段指令完成真实验证，例如输入 `prd` 或“开始 PRD 阶段”。测试环境中未识别 APW 原生斜杠命令，但不影响工作流执行。详见 [Claude Code 报告](./docs/testing/claude-code.md)。
+
+请使用当前工具可接受的阶段触发方式:支持时可使用 `/prd` 这类斜杠形式;不支持时可使用 `prd` 或“开始 PRD 阶段”这类自然语言阶段指令。
 
 ## 工作流状态
 

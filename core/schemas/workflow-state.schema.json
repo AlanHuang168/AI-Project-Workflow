@@ -14,16 +14,24 @@
   ],
   "properties": {
     "workflowVersion": { "type": "string" },
+    "workflowProtocolVersion": { "type": "string" },
+    "workflowStages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
     "projectName": { "type": "string" },
     "currentStage": {
       "type": "string",
-      "enum": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"]
+      "pattern": "^[a-z][a-z0-9-]*$"
     },
     "completedStages": {
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"]
+        "pattern": "^[a-z][a-z0-9-]*$"
       }
     },
     "blocked": { "type": "boolean" },
@@ -50,7 +58,7 @@
         "properties": {
           "stage": {
             "type": "string",
-            "enum": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"]
+            "pattern": "^[a-z][a-z0-9-]*$"
           },
           "reason": { "type": "string" },
           "approvedByUser": { "type": "boolean" }
