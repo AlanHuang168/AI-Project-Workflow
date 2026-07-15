@@ -40,6 +40,9 @@ AI Project Workflow makes delivery explicit:
 
 Enforcement is prompt-based. The adapter instructs the AI agent to read the active Skill, verify upstream documents, and update the state file before moving on. The CLI verifies the files (`apw validate`, `apw status`); the agent follows the contract because every entry point tells it to. If an agent drifts, point it back to `AGENTS.md`.
 
+> New to Node.js or command-line tools?
+> Read the [Beginner Installation Guide](./docs/getting-started/beginner-guide.md).
+
 ## Quick start
 
 ```bash
