@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { VERSION } from "../src/lib/constants.js";
 import { ROOT } from "../src/lib/path-utils.js";
 
 const forbiddenPublishDirs = new Set(["legacy", "scripts", "tests", "test-node", "tmp", ".ai-workflow", "node_modules"]);
@@ -15,6 +16,7 @@ const allowedFiles = [
   "CLAUDE.md",
   "README.md",
   "README.zh-CN.md",
+  "CHANGELOG.md",
   "LICENSE",
   "CONTRIBUTING.md",
   "CODE_OF_CONDUCT.md",
@@ -39,7 +41,9 @@ async function listProjectFiles(dir = ROOT) {
 test("package metadata is ready for public npm publishing", async () => {
   const pkg = JSON.parse(await readFile(join(ROOT, "package.json"), "utf8"));
   assert.equal(pkg.name, "@dayahs/ai-project-workflow");
-  assert.equal(pkg.version, "0.1.0");
+  assert.equal(pkg.version, "0.2.0");
+  assert.equal(pkg.version, VERSION);
+  assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
   assert.equal(pkg.description, "A universal AI-native project workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, TRAE, and other AI coding assistants.");
   assert.equal(pkg.type, "module");
   assert.equal(pkg.license, "MIT");

@@ -1,6 +1,6 @@
 {
   "name": "@dayahs/ai-project-workflow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A universal AI-native project workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, TRAE, and other AI coding assistants.",
   "type": "module",
   "license": "MIT",
@@ -29,6 +29,7 @@
     "CLAUDE.md",
     "README.md",
     "README.zh-CN.md",
+    "CHANGELOG.md",
     "LICENSE",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",

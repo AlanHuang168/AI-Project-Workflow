@@ -61,3 +61,4 @@ docs/IMPL.md
 .npm-cache-i18n-check
 .npm-cache-release-check
 
+apw-config-*/

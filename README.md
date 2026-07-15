@@ -109,6 +109,39 @@ PRD -> Architecture -> SDD -> Test Plan -> Code
 
 Upstream documents are authoritative. If the code disagrees with the SDD, fix the code or formally revise the SDD first — never silently diverge. A stage may be skipped only with your explicit approval, and the skip plus its reason is recorded under `skippedStages` in the state file.
 
+## Configurable workflows
+
+APW uses the built-in eight-stage workflow when a project has no `.apw/project.yaml` file:
+
+```text
+init -> prd -> hld -> sdd -> impl -> review -> deploy -> retro
+```
+
+Projects can define a stage order in `.apw/project.yaml`:
+
+```yaml
+protocolVersion: 1.0.0
+stages:
+  - init
+  - discovery
+  - id: build
+    title: Build
+    description: Build the release candidate
+  - review
+```
+
+Stage ids must start with a lowercase letter and may contain lowercase letters, numbers, and hyphens. Duplicate ids, empty `protocolVersion`, empty `stages`, and unknown fields are rejected.
+
+Custom stage Skills are resolved in this order:
+
+```text
+1. .apw/skills/<stage>/SKILL.md
+2. installed platform Skill
+3. core/skills/<stage>/SKILL.md
+```
+
+The project-level YAML parser intentionally supports only this documented subset: scalar `protocolVersion`, a `stages` list, string stage ids, and object stage entries with `id`, `title`, and `description`. It does not support anchors, aliases, multiline blocks, inline collections, or arbitrary nesting.
+
 ## Platform setup
 
 What gets installed and how the workflow is triggered, per tool:
@@ -131,6 +164,8 @@ Target projects track progress in `.ai-workflow/state.json`:
 ```json
 {
   "workflowVersion": "1.0.0",
+  "workflowProtocolVersion": "1.0.0",
+  "workflowStages": ["init", "prd", "hld", "sdd", "impl", "review", "deploy", "retro"],
   "projectName": "todo-app",
   "currentStage": "sdd",
   "completedStages": ["init", "prd", "hld"],
@@ -152,7 +187,7 @@ The schema lives at `core/schemas/workflow-state.schema.json`. The agent updates
 apw init [target] --platform <tool>   # create target dir if needed, then install
 apw install [target] --platform <tool># install workflow files into an existing dir
 apw sync [target] [--platform <tool>] # regenerate adapter files from core/
-apw validate [target]                 # check structure, frontmatter, templates, adapters
+apw validate [target]                 # check structure, config, frontmatter, state, adapters
 apw status [target]                   # print workflow state and installed platforms
 apw migrate [target] [--apply]        # move legacy layouts aside (dry-run by default)
 apw --help
@@ -199,6 +234,7 @@ src/                 CLI implementation
 core/                canonical source: rules, skills, agents, templates, schemas
 adapters/            generated adapter trees, one per platform
 examples/            minimal target project
+examples/configurable-workflow/
 test-node/           test suite (node --test)
 ```
 
@@ -207,6 +243,8 @@ test-node/           test suite (node --test)
 ## Extending
 
 **Add a Skill:** create `core/skills/<name>/SKILL.md` with the standard frontmatter and sections (Goal, Preconditions, Steps, Outputs, Acceptance Criteria, Stop Conditions, Rollback Rules, Completion Report). If it joins the core stage flow, update `src/lib/constants.js` and the tests. Then run `apw sync . --platform all` and `apw validate .`.
+
+**Add project stages:** create `.apw/project.yaml`, then add a Skill for each custom stage under `.apw/skills/<stage>/SKILL.md`. Run `apw validate .` before asking an agent to follow the custom flow.
 
 **Add an adapter:** add generation rules in `src/lib/adapters.js`, keep `core/` canonical, mark generated files `AUTO-GENERATED`, add tests, then sync and validate.
 
@@ -225,6 +263,10 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor guide.
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Release notes
+
+See [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 
