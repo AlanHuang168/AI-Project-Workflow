@@ -8,6 +8,7 @@ import { validateProject } from "../src/lib/validate.js";
 
 const hanPattern = /[\u3400-\u4DBF\u4E00-\u9FFF]/;
 const englishOnlyRoots = ["core", "adapters", "src", "bin", "examples", "AGENTS.md", "CLAUDE.md", "README.md"];
+const chineseReadmeLink = "[中文文档](./README.zh-CN.md)";
 
 async function listFiles(path) {
   const entries = await readdir(path, { withFileTypes: true });
@@ -41,7 +42,9 @@ async function projectFiles(items) {
 test("core runtime sources contain no Chinese characters", async () => {
   const offenders = [];
   for (const file of await projectFiles(englishOnlyRoots)) {
-    const text = await readFile(file, "utf8");
+    const rel = relative(ROOT, file).split("\\").join("/");
+    let text = await readFile(file, "utf8");
+    if (rel === "README.md") text = text.replace(chineseReadmeLink, "");
     if (hanPattern.test(text)) offenders.push(relative(ROOT, file).split("\\").join("/"));
   }
   assert.deepEqual(offenders, []);
@@ -50,9 +53,9 @@ test("core runtime sources contain no Chinese characters", async () => {
 test("readme language strategy is explicit", async () => {
   const readme = await readFile(join(ROOT, "README.md"), "utf8");
   const zhReadme = await readFile(join(ROOT, "README.zh-CN.md"), "utf8");
-  assert.equal(hanPattern.test(readme), false);
+  assert.equal(hanPattern.test(readme.replace(chineseReadmeLink, "")), false);
   assert.equal(hanPattern.test(zhReadme), true);
-  assert.match(readme, /\[Chinese documentation\]\(\.\/README\.zh-CN\.md\)/);
+  assert.match(readme, /\[中文文档\]\(\.\/README\.zh-CN\.md\)/);
   assert.match(zhReadme, /\[English\]\(\.\/README\.md\)/);
 });
 

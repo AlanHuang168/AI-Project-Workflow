@@ -4,7 +4,7 @@
 [![npm version](https://img.shields.io/npm/v/%40dayahs%2Fai-project-workflow.svg)](https://www.npmjs.com/package/@dayahs/ai-project-workflow)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-[Chinese documentation](./README.zh-CN.md)
+[中文文档](./README.zh-CN.md)
 
 A universal, AI-native software delivery workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, TRAE, and other AI coding assistants. One canonical `core/` source, lightweight adapters per tool, a state file that tracks progress, and a CLI that installs and validates everything.
 
@@ -54,6 +54,23 @@ apw init my-app --platform cursor
 ```
 
 Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `claude-code`, `codex`, `all`.
+
+## Verified platforms
+
+| Platform | Status | Evidence |
+| -------- | ------ | -------- |
+| Cursor | ✅ Verified | [Report](./docs/testing/cursor.md) |
+| Claude Code | ✅ Verified | [Report](./docs/testing/claude-code.md) |
+| Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
+| TRAE | ✅ Verified | [Report](./docs/testing/trae.md) |
+| CodeBuddy | ✅ Verified | [Report](./docs/testing/codebuddy.md) |
+| Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
+
+See the full [compatibility matrix](./docs/testing/compatibility-matrix.md).
+
+![Cursor workflow verification](./docs/testing/images/cursor/cursor2.png)
+
+![CodeBuddy Skills and Commands recognized](./docs/testing/images/codebuddy/1.png)
 
 ## Your first project, end to end
 
@@ -155,7 +172,9 @@ What gets installed and how the workflow is triggered, per tool:
 | Qoder | `.qoder/skills/`, `.qoder/agents/` | Reference the Skill files in your prompts, or rely on the root `AGENTS.md`. |
 | CodeBuddy | `.codebuddy/skills/`, `.codebuddy/agents/`, adapter note | Minimal compatibility adapter; falls back to `AGENTS.md`. |
 
-The stage commands (`/prd`, `/impl`, and so on) are a prompt convention understood by the rules. They work in any chat-based tool, including tools without native slash-command support.
+Claude Code was verified using natural-language stage instructions such as `prd` or `start the PRD stage`; native APW slash commands were not available in the tested environment. See the [Claude Code report](./docs/testing/claude-code.md).
+
+Use the stage invocation form your tool accepts: slash-style prompts such as `/prd` where supported, or natural-language stage instructions such as `prd` or `start the PRD stage`.
 
 ## Workflow state
 

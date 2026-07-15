@@ -94,6 +94,6 @@ test("readme and example only document the Node CLI", async () => {
     assert.equal(example.includes(ref), false, `example contains ${ref}`);
   }
   assert.match(readme, /npx @dayahs\/ai-project-workflow init \. --platform cursor/);
-  assert.match(readme, /\[Chinese documentation\]\(\.\/README\.zh-CN\.md\)/);
+  assert.match(readme, /\[中文文档\]\(\.\/README\.zh-CN\.md\)/);
   assert.match(zhReadme, /\[English\]\(\.\/README\.md\)/);
 });
