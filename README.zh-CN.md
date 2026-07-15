@@ -40,6 +40,9 @@ AI Project Workflow 把交付过程显式化:
 
 约束是基于提示词的:适配层指示 AI 先读当前阶段的 Skill、核对上游文档、更新状态文件,然后才能推进。CLI 负责校验文件(`apw validate`、`apw status`);AI 遵守契约是因为每个入口都这样要求它。如果 AI 跑偏了,让它重新阅读 `AGENTS.md`。
 
+> 不会 Node.js、npm 或终端命令？
+> 查看[零基础安装指南](./docs/getting-started/beginner-guide.zh-CN.md)。
+
 ## 快速开始
 
 ```bash
