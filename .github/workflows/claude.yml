@@ -41,10 +41,12 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           use_commit_signing: true
-          # The action's default bot_id (41898282) is github-actions[bot]'s ID,
-          # so commits were attributed to the wrong account. 209825114 is the
-          # real claude[bot] user ID; with it the commit author email becomes
-          # 209825114+claude[bot]@users.noreply.github.com and GitHub shows
-          # Claude's avatar in commits and the Contributors graph.
-          bot_id: "209825114"
-          bot_name: "claude[bot]"
+          # Author commits as the repository owner, matching how local
+          # Claude Code commits look. Claude is credited through the
+          # "Co-Authored-By: Claude <noreply@anthropic.com>" trailer required
+          # by CLAUDE.md, which attributes the official `claude` account
+          # (no [bot] suffix) in the Contributors graph.
+          # Note: the action's default bot_id (41898282) is github-actions[bot],
+          # which misattributes commits - always set bot_id/bot_name explicitly.
+          bot_id: "5227952"
+          bot_name: "AlanHuang168"
