@@ -30,16 +30,6 @@ AI Project Workflow 把交付过程显式化:
                 └── schemas/     状态文件 schema
                         |
         apw init <目标目录> --platform <工具>
-                        v
-    your-project/
-    ├── AGENTS.md, CLAUDE.md            AI 工具读取的入口
-    ├── .cursor/ 或 .trae/ 或 ...       适配文件,放在工具真正加载的位置
-    └── .ai-workflow/                   APW 内部实现全部收纳于此
-        ├── VERSION
-        ├── state.json                  工作流状态
-        ├── project.yaml                可选的自定义阶段配置
-        ├── runtime/                    skills、rules、templates、schemas、agents
-        └── adapters/                   平台说明文件
 ```
 
 APW 将运行时文件收纳在 `.ai-workflow/` 下,让项目根目录保持干净,同时继续兼容旧目录布局。
