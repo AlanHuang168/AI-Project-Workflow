@@ -1,8 +1,8 @@
 # Compatibility Matrix
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
-This matrix summarizes real-environment compatibility checks for AI Project Workflow v0.2.0. Platform versions are listed as "Latest available version at test time" unless the screenshot evidence clearly shows a version.
+This matrix summarizes real-environment compatibility checks for AI Project Workflow. Platform versions are listed as "Latest available version at test time" unless the screenshot evidence clearly shows a version.
 
 | Platform | Install | Adapter Files | Skill/Rule Loading | Workflow Test | Status | Last Verified |
 | -------- | ------: | ------------: | -----------------: | ------------: | ------ | ------------- |
@@ -11,6 +11,7 @@ This matrix summarizes real-environment compatibility checks for AI Project Work
 | Codex CLI | ✅ | ✅ | ✅ | ✅ | Verified | 2026-07-15 |
 | TRAE | ✅ | ✅ | ✅ | ✅ | Verified | 2026-07-15 |
 | CodeBuddy | ✅ | ✅ | ✅ | ✅ | Verified | 2026-07-15 |
+| CatPaw | ✅ | ✅ | ✅ | ✅ | Verified | 2026-07-16 |
 | Qoder | Not fully verified | Generated | Pending | Pending | Pending | Pending |
 
 ## Notes
@@ -24,4 +25,5 @@ This matrix summarizes real-environment compatibility checks for AI Project Work
   - [Codex CLI](./codex.md)
   - [TRAE](./trae.md)
   - [CodeBuddy](./codebuddy.md)
+  - [CatPaw](./catpaw.md)
   - [Qoder](./qoder.md)

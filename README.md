@@ -74,7 +74,7 @@ Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `catpaw`, `claude-c
 | Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
 | TRAE | ✅ Verified | [Report](./docs/testing/trae.md) |
 | CodeBuddy | ✅ Verified | [Report](./docs/testing/codebuddy.md) |
-| CatPaw | ⏳ Pending | — |
+| CatPaw | ✅ Verified | [Report](./docs/testing/catpaw.md) |
 | Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
 
 See the full [compatibility matrix](./docs/testing/compatibility-matrix.md).

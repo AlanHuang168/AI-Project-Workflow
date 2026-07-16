@@ -73,7 +73,7 @@ apw init my-app --platform cursor
 | Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
 | TRAE | ✅ Verified | [Report](./docs/testing/trae.md) |
 | CodeBuddy | ✅ Verified | [Report](./docs/testing/codebuddy.md) |
-| CatPaw | ⏳ Pending | — |
+| CatPaw | ✅ Verified | [Report](./docs/testing/catpaw.md) |
 | Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
 
 完整结果见 [compatibility matrix](./docs/testing/compatibility-matrix.md)。
