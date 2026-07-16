@@ -7,3 +7,14 @@ Before starting any development task:
 3. Read `core/skills/<stage>/SKILL.md` for the active stage.
 4. Follow `core/rules/`.
 5. Do not bypass stage gates, verification rules, or Git restrictions.
+
+## Git commit attribution
+
+End every commit message with this trailer on its own line:
+
+```text
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+This credits the official `claude` GitHub account as co-author so AI
+contributions stay visible in the Contributors graph.
