@@ -2,6 +2,7 @@ import { basename, join } from "node:path";
 import { GENERATED_HEADER, LEGACY_GENERATED_HEADER, PLATFORM_DOT_DIRS, PLATFORMS, STAGES } from "./constants.js";
 import { exists, listFiles, readText, writeText } from "./fs-utils.js";
 import { rel } from "./path-utils.js";
+import { WORKFLOW_DIR, detectContentMode, runtimeBase, toProjectPaths } from "./layout.js";
 
 function generatedHeader(root, source) {
   return `${GENERATED_HEADER}<!-- SOURCE: ${rel(root, source)} -->\n\n`;
@@ -20,22 +21,13 @@ function isGeneratedContent(text) {
   );
 }
 
-async function renderSkill(root, stage) {
-  const source = join(root, "core", "skills", stage, "SKILL.md");
-  return [source, `${generatedHeader(root, source)}${await readText(source)}`];
-}
-
-async function renderAgent(root, source) {
-  return [source, `${generatedHeader(root, source)}${await readText(source)}`];
-}
-
-// Two layouts exist for adapter output:
+// Two path layouts exist for adapter output:
 // - "repo": files live under `adapters/<platform>/...` (this repository,
 //   where adapters are generated and committed as the distribution source).
 // - "project": dot-directories live at the project root, where the tools
 //   actually load them (Cursor only reads `.cursor/` at the workspace root,
-//   TRAE reads `.trae/`, and so on). README notes stay under
-//   `adapters/<platform>/` in both layouts.
+//   TRAE reads `.trae/`, and so on). README notes live under
+//   `.ai-workflow/adapters/<platform>/` (or legacy `adapters/<platform>/`).
 export async function detectLayout(root, platform) {
   const dotDir = PLATFORM_DOT_DIRS[platform];
   if (!dotDir) return "repo";
@@ -44,16 +36,26 @@ export async function detectLayout(root, platform) {
   return "repo";
 }
 
-export async function plannedFiles(root, platform, layout = "repo") {
+async function renderDoc(root, source, contentMode) {
+  const content = `${generatedHeader(root, source)}${await readText(source)}`;
+  return contentMode === "runtime" ? toProjectPaths(content) : content;
+}
+
+export async function plannedFiles(root, platform, layout = "repo", contentMode = "core") {
   const files = new Map();
-  const base = join(root, "adapters", platform);
-  const dotBase = layout === "project" ? root : base;
+  const noteBase = contentMode === "runtime"
+    ? join(root, WORKFLOW_DIR, "adapters", platform)
+    : join(root, "adapters", platform);
+  const dotBase = layout === "project" ? root : join(root, "adapters", platform);
+  const put = (path, content) => {
+    files.set(path, contentMode === "runtime" ? toProjectPaths(content) : content);
+  };
   let skillRoot = null;
   let agentRoot = null;
 
   if (platform === "cursor") {
     const rule = join(dotBase, ".cursor", "rules", "ai-sdd.mdc");
-    files.set(
+    put(
       rule,
       `---\ndescription: AI Project Workflow rules for Cursor\nalwaysApply: true\n---\n\n${GENERATED_HEADER}<!-- SOURCE: AGENTS.md + core/rules -->\n\n# AI Project Workflow Cursor Adapter\n\nBefore starting a task, read \`AGENTS.md\`, \`core/rules/\`, \`core/skills/<stage>/SKILL.md\`, and \`.ai-workflow/state.json\` from the project root.\nThis file is a lightweight entry point. The canonical source is \`core/\`.\n`
     );
@@ -61,7 +63,7 @@ export async function plannedFiles(root, platform, layout = "repo") {
     agentRoot = join(dotBase, ".cursor", "agents");
   } else if (platform === "trae") {
     const rules = join(dotBase, ".trae", "rules.md");
-    files.set(
+    put(
       rules,
       `${GENERATED_HEADER}<!-- SOURCE: AGENTS.md + core/rules -->\n\n# AI Project Workflow Rules\n\nKeep the slash command convention: \`/init\`, \`/prd\`, \`/hld\`, \`/sdd\`, \`/impl\`, \`/review\`, \`/deploy\`, and \`/retro\`.\nBefore acting, read \`AGENTS.md\`, \`core/rules/\`, the active Skill, and workflow state from the project root.\n`
     );
@@ -75,30 +77,30 @@ export async function plannedFiles(root, platform, layout = "repo") {
     // YAML header; `ruleType: Always` applies the rule to every conversation.
     // Docs: https://catpaw.meituan.com/guides/settings/rules
     const rule = join(dotBase, ".catpaw", "rules", "ai-sdd.md");
-    files.set(
+    put(
       rule,
       `---\nruleType: Always\ndescription: AI Project Workflow rules for CatPaw\n---\n\n${GENERATED_HEADER}<!-- SOURCE: AGENTS.md + core/rules -->\n\n# AI Project Workflow CatPaw Adapter\n\nBefore starting a task, read \`AGENTS.md\`, \`core/rules/\`, \`core/skills/<stage>/SKILL.md\`, and \`.ai-workflow/state.json\` from the project root.\nKeep the stage command convention: \`/init\`, \`/prd\`, \`/hld\`, \`/sdd\`, \`/impl\`, \`/review\`, \`/deploy\`, and \`/retro\`.\nThis file is a lightweight entry point. The canonical source is \`core/\`.\n`
     );
     skillRoot = join(dotBase, ".catpaw", "skills");
     agentRoot = join(dotBase, ".catpaw", "agents");
   } else if (platform === "codebuddy") {
-    const note = join(base, "README.md");
-    files.set(
+    const note = join(noteBase, "README.md");
+    put(
       note,
       `${GENERATED_HEADER}<!-- SOURCE: README.md + AGENTS.md -->\n\n# CodeBuddy Adapter\n\nThis adapter uses a minimal compatibility convention. Prefer \`AGENTS.md\` and \`core/skills/\` from the project root.\nIf the current CodeBuddy version recognizes \`.codebuddy/skills/\` or \`.codebuddy/rules/\`, use the generated files in this directory. Otherwise, fall back to \`AGENTS.md\`.\n`
     );
     skillRoot = join(dotBase, ".codebuddy", "skills");
     agentRoot = join(dotBase, ".codebuddy", "agents");
   } else if (platform === "claude-code") {
-    const note = join(base, "README.md");
-    files.set(
+    const note = join(noteBase, "README.md");
+    put(
       note,
       `${GENERATED_HEADER}<!-- SOURCE: CLAUDE.md -->\n\n# Claude Code Adapter\n\nUse root \`CLAUDE.md\` as the lightweight entry point, then continue with \`AGENTS.md\`, \`core/rules/\`, and \`core/skills/\`.\n`
     );
     return files;
   } else if (platform === "codex") {
-    const note = join(base, "README.md");
-    files.set(
+    const note = join(noteBase, "README.md");
+    put(
       note,
       `${GENERATED_HEADER}<!-- SOURCE: AGENTS.md -->\n\n# Codex Adapter\n\nCodex CLI primarily relies on root \`AGENTS.md\` and \`core/skills/\`. This adapter does not duplicate the full rules.\n`
     );
@@ -107,25 +109,25 @@ export async function plannedFiles(root, platform, layout = "repo") {
     throw new Error(`unsupported platform: ${platform}`);
   }
 
+  const skillSourceRoot = join(runtimeBase(root, contentMode), "skills");
   for (const stage of STAGES) {
-    const [, content] = await renderSkill(root, stage);
-    files.set(join(skillRoot, stage, "SKILL.md"), content);
+    const source = join(skillSourceRoot, stage, "SKILL.md");
+    files.set(join(skillRoot, stage, "SKILL.md"), await renderDoc(root, source, contentMode));
   }
 
-  const agentSourceRoot = join(root, "core", "agents");
+  const agentSourceRoot = join(runtimeBase(root, contentMode), "agents");
   for (const source of await listFiles(agentSourceRoot)) {
     if (!source.endsWith(".md")) continue;
-    const [, content] = await renderAgent(root, source);
-    files.set(join(agentRoot, basename(source)), content);
+    files.set(join(agentRoot, basename(source)), await renderDoc(root, source, contentMode));
   }
 
   return files;
 }
 
-export async function ensureCoreSkills(root) {
+export async function ensureCoreSkills(root, contentMode = "core") {
   const missing = [];
   for (const stage of STAGES) {
-    const path = join(root, "core", "skills", stage, "SKILL.md");
+    const path = join(runtimeBase(root, contentMode), "skills", stage, "SKILL.md");
     if (!(await exists(path))) missing.push(path);
   }
   return missing;
@@ -142,6 +144,10 @@ export async function presentPlatforms(root) {
       found.push(platform);
       continue;
     }
+    if (await exists(join(root, WORKFLOW_DIR, "adapters", platform))) {
+      found.push(platform);
+      continue;
+    }
     const dotDir = PLATFORM_DOT_DIRS[platform];
     if (dotDir && (await exists(join(root, dotDir)))) found.push(platform);
   }
@@ -150,14 +156,15 @@ export async function presentPlatforms(root) {
 
 export async function syncAdapters(root, options = {}) {
   const platforms = expandPlatforms(options.platform ?? "all");
-  const missing = await ensureCoreSkills(root);
+  const contentMode = options.contentMode ?? (await detectContentMode(root));
+  const missing = await ensureCoreSkills(root, contentMode);
   if (missing.length) return { code: 2, messages: missing.map((path) => `FAIL missing ${rel(root, path)}`) };
 
   const messages = [];
   let ok = true;
   for (const platform of platforms) {
     const layout = options.layout ?? (await detectLayout(root, platform));
-    for (const [path, content] of await plannedFiles(root, platform, layout)) {
+    for (const [path, content] of await plannedFiles(root, platform, layout, contentMode)) {
       if (await exists(path)) {
         const old = await readText(path);
         if (old === content) continue;
@@ -176,14 +183,15 @@ export async function syncAdapters(root, options = {}) {
 
 export async function checkAdapters(root, options = {}) {
   const platforms = options.platform ? expandPlatforms(options.platform) : ((await presentPlatforms(root)).length ? await presentPlatforms(root) : PLATFORMS);
-  const missing = await ensureCoreSkills(root);
+  const contentMode = options.contentMode ?? (await detectContentMode(root));
+  const missing = await ensureCoreSkills(root, contentMode);
   if (missing.length) return { code: 2, messages: missing.map((path) => `FAIL missing ${rel(root, path)}`) };
 
   const messages = [];
   let ok = true;
   for (const platform of platforms) {
     const layout = options.layout ?? (await detectLayout(root, platform));
-    for (const [path, content] of await plannedFiles(root, platform, layout)) {
+    for (const [path, content] of await plannedFiles(root, platform, layout, contentMode)) {
       if (!(await exists(path))) {
         messages.push(`FAIL missing generated file: ${rel(root, path)}`);
         ok = false;

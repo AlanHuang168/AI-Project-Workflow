@@ -1,15 +1,36 @@
 import { basename, join, relative, sep } from "node:path";
 import { PLATFORM_CHOICES, PLATFORM_DOT_DIRS } from "../lib/constants.js";
 import { expandPlatforms } from "../lib/adapters.js";
-import { copyFileSafe, copyTreeSafe, writeFileSafe } from "../lib/safe-copy.js";
+import { copyFileSafe, writeFileSafe } from "../lib/safe-copy.js";
 import { initialState } from "../lib/state.js";
-import { exists, isDirectory, listFiles } from "../lib/fs-utils.js";
+import { exists, isDirectory, listFiles, readText } from "../lib/fs-utils.js";
 import { ROOT, rel } from "../lib/path-utils.js";
 import { loadWorkflowConfig } from "../lib/workflow-config.js";
+import { RUNTIME_DIR, WORKFLOW_DIR, isTextDocPath, toProjectPaths } from "../lib/layout.js";
+
+// Installed projects keep every APW-internal file under .ai-workflow/ so the
+// project root only shows the user's own files, the AI entry points
+// (AGENTS.md, CLAUDE.md) and the tool dot-directories that the tools
+// themselves require at the root. Canonical core/ path references inside
+// markdown content are rewritten to .ai-workflow/runtime/ on the way in.
+async function installFile(source, destination, context) {
+  if (isTextDocPath(source)) {
+    await writeFileSafe(destination, toProjectPaths(await readText(source)), context);
+  } else {
+    await copyFileSafe(source, destination, context);
+  }
+}
+
+async function installTree(sourceRoot, targetRoot, context) {
+  for (const source of await listFiles(sourceRoot)) {
+    await installFile(source, join(targetRoot, relative(sourceRoot, source)), context);
+  }
+}
 
 // Adapter dot-directories (.cursor/, .trae/, ...) must be installed at the
 // project root because that is the only location the tools load them from.
-// Everything else in an adapter (README notes) stays under adapters/<platform>/.
+// Everything else in an adapter (README notes) goes to
+// .ai-workflow/adapters/<platform>/.
 async function installAdapter(platform, target, context) {
   const source = join(ROOT, "adapters", platform);
   if (!(await exists(source))) return;
@@ -17,8 +38,10 @@ async function installAdapter(platform, target, context) {
   for (const file of await listFiles(source)) {
     const relPath = relative(source, file);
     const inDotDir = dotDir && (relPath === dotDir || relPath.startsWith(`${dotDir}${sep}`));
-    const destination = inDotDir ? join(target, relPath) : join(target, "adapters", platform, relPath);
-    await copyFileSafe(file, destination, context);
+    const destination = inDotDir
+      ? join(target, relPath)
+      : join(target, WORKFLOW_DIR, "adapters", platform, relPath);
+    await installFile(file, destination, context);
   }
 }
 
@@ -36,12 +59,13 @@ export async function installCommand(target, options = {}) {
   }
 
   const context = { force: options.force, dryRun: options.dryRun, installed: [], conflicts: [] };
-  for (const name of ["AGENTS.md", "CLAUDE.md", "VERSION"]) {
-    await copyFileSafe(join(ROOT, name), join(target, name), context);
+  for (const name of ["AGENTS.md", "CLAUDE.md"]) {
+    await installFile(join(ROOT, name), join(target, name), context);
   }
-  await copyTreeSafe(join(ROOT, "core"), join(target, "core"), context);
+  await copyFileSafe(join(ROOT, "VERSION"), join(target, WORKFLOW_DIR, "VERSION"), context);
+  await installTree(join(ROOT, "core"), join(target, RUNTIME_DIR), context);
   await writeFileSafe(
-    join(target, ".ai-workflow", "state.json"),
+    join(target, WORKFLOW_DIR, "state.json"),
     `${JSON.stringify(initialState(basename(target), workflowConfig.config), null, 2)}\n`,
     context
   );
