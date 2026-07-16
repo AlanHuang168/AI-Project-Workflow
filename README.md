@@ -30,16 +30,6 @@ AI Project Workflow makes delivery explicit:
                 └── schemas/     state file schema
                         |
         apw init <target> --platform <tool>
-                        v
-    your-project/
-    ├── AGENTS.md, CLAUDE.md            entry points read by the AI tool
-    ├── .cursor/ or .trae/ or ...       adapter files where your tool loads them
-    └── .ai-workflow/                   everything APW-internal
-        ├── VERSION
-        ├── state.json                  workflow state
-        ├── project.yaml                optional custom stage order
-        ├── runtime/                    skills, rules, templates, schemas, agents
-        └── adapters/                   platform notes
 ```
 
 APW stores its runtime under `.ai-workflow/` to keep the project root clean while remaining backward compatible with legacy layouts.
