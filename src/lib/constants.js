@@ -1,4 +1,4 @@
-export const VERSION = "0.2.0";
+export const VERSION = "0.4.0";
 export const WORKFLOW_VERSION = "1.0.0";
 export const DEFAULT_WORKFLOW_CONFIG = Object.freeze({
   protocolVersion: WORKFLOW_VERSION,

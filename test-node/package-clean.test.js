@@ -40,9 +40,10 @@ async function listProjectFiles(dir = ROOT) {
 
 test("package metadata is ready for public npm publishing", async () => {
   const pkg = JSON.parse(await readFile(join(ROOT, "package.json"), "utf8"));
+  const versionFile = await readFile(join(ROOT, "VERSION"), "utf8");
   assert.equal(pkg.name, "@dayahs/ai-project-workflow");
-  assert.equal(pkg.version, "0.2.0");
   assert.equal(pkg.version, VERSION);
+  assert.equal(versionFile.trim(), pkg.version);
   assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
   assert.equal(pkg.description, "A universal AI-native project workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, TRAE, and other AI coding assistants.");
   assert.equal(pkg.type, "module");

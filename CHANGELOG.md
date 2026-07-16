@@ -8,6 +8,24 @@ This project uses npm package versions as release identifiers. Items under Unrel
 
 No unreleased changes yet.
 
+## [0.4.0] - 2026-07-16
+
+### Added
+
+- Hidden APW runtime layout under `.ai-workflow/runtime/`
+- CatPaw platform verification
+- Backward-compatible legacy layout support
+
+### Changed
+
+- New installations no longer place `core/` and `VERSION` in the project root
+- Runtime and version files are now stored under `.ai-workflow/`
+
+### Compatibility
+
+- Existing projects using root `core/` and `VERSION` remain supported
+- Workflow protocol version remains `1.0.0`
+
 ## [0.2.0] - 2026-07-15
 
 ### Added
