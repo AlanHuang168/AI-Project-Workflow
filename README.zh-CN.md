@@ -44,6 +44,24 @@ AI Project Workflow 把交付过程显式化:
 
 APW 将运行时文件收纳在 `.ai-workflow/` 下,让项目根目录保持干净,同时继续兼容旧目录布局。
 
+安装后,项目根目录只保留 AI 工具需要自动发现的入口文件。APW 自己的运行时、状态、版本和适配说明都会放进隐藏目录 `.ai-workflow/`:
+
+```text
+your-project/
+├── AGENTS.md                 通用 AI 工作规则
+├── CLAUDE.md                 Claude 兼容入口
+├── docs/                     工作流各阶段生成的交付物
+├── .cursor/ .catpaw/ ...     各平台真正加载的适配文件
+└── .ai-workflow/             隐藏的 APW 运行目录
+    ├── VERSION               已安装的 APW 包版本
+    ├── state.json            当前阶段与已完成阶段
+    ├── project.yaml          可选的自定义工作流配置
+    ├── runtime/              已安装的 rules、Skills、agents、templates、schemas
+    └── adapters/             非点目录平台的适配说明
+```
+
+旧项目如果仍然使用根目录 `core/` 或 `VERSION`,也仍然有效:APW 会优先读取 `.ai-workflow/`,需要时再回退到旧目录布局。
+
 约束是基于提示词的:适配层指示 AI 先读当前阶段的 Skill、核对上游文档、更新状态文件,然后才能推进。CLI 负责校验文件(`apw validate`、`apw status`);AI 遵守契约是因为每个入口都这样要求它。如果 AI 跑偏了,让它重新阅读 `AGENTS.md`。
 
 > 不会 Node.js、npm 或终端命令？

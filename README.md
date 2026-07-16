@@ -44,6 +44,24 @@ AI Project Workflow makes delivery explicit:
 
 APW stores its runtime under `.ai-workflow/` to keep the project root clean while remaining backward compatible with legacy layouts.
 
+After installation, the project root only keeps the files your AI tool needs to discover automatically. APW's internal runtime, state, version, and adapter notes live under the hidden `.ai-workflow/` directory:
+
+```text
+your-project/
+├── AGENTS.md                 shared AI working rules
+├── CLAUDE.md                 Claude-compatible entry point
+├── docs/                     stage deliverables written by the workflow
+├── .cursor/ .catpaw/ ...     platform-specific adapter files
+└── .ai-workflow/             hidden APW runtime directory
+    ├── VERSION               installed APW package version
+    ├── state.json            current stage and completed stages
+    ├── project.yaml          optional custom workflow config
+    ├── runtime/              installed rules, Skills, agents, templates, schemas
+    └── adapters/             platform notes for non-dot-directory adapters
+```
+
+Older projects that still have root-level `core/` or `VERSION` remain valid: APW checks `.ai-workflow/` first and falls back to the legacy layout when needed.
+
 Enforcement is prompt-based. The adapter instructs the AI agent to read the active Skill, verify upstream documents, and update the state file before moving on. The CLI verifies the files (`apw validate`, `apw status`); the agent follows the contract because every entry point tells it to. If an agent drifts, point it back to `AGENTS.md`.
 
 > New to Node.js or command-line tools?
