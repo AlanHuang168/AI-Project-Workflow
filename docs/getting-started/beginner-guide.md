@@ -110,10 +110,8 @@ Other platform options:
 | Claude Code | `--platform claude-code` |
 | Codex | `--platform codex` |
 | TRAE | `--platform trae` |
-| Qoder | `--platform qoder` |
+| Qoder | `--platform qoder` (pending verification) |
 | CodeBuddy | `--platform codebuddy` |
-
-Qoder is listed as an install option. It is not marked as fully verified in the compatibility reports yet.
 
 ## Step 5: Open the Project in Your AI Coding Tool
 
