@@ -70,6 +70,17 @@ export async function plannedFiles(root, platform, layout = "repo") {
   } else if (platform === "qoder") {
     skillRoot = join(dotBase, ".qoder", "skills");
     agentRoot = join(dotBase, ".qoder", "agents");
+  } else if (platform === "catpaw") {
+    // CatPaw (Meituan) loads project rules from `.catpaw/rules/*.md` with a
+    // YAML header; `ruleType: Always` applies the rule to every conversation.
+    // Docs: https://catpaw.meituan.com/guides/settings/rules
+    const rule = join(dotBase, ".catpaw", "rules", "ai-sdd.md");
+    files.set(
+      rule,
+      `---\nruleType: Always\ndescription: AI Project Workflow rules for CatPaw\n---\n\n${GENERATED_HEADER}<!-- SOURCE: AGENTS.md + core/rules -->\n\n# AI Project Workflow CatPaw Adapter\n\nBefore starting a task, read \`AGENTS.md\`, \`core/rules/\`, \`core/skills/<stage>/SKILL.md\`, and \`.ai-workflow/state.json\` from the project root.\nKeep the stage command convention: \`/init\`, \`/prd\`, \`/hld\`, \`/sdd\`, \`/impl\`, \`/review\`, \`/deploy\`, and \`/retro\`.\nThis file is a lightweight entry point. The canonical source is \`core/\`.\n`
+    );
+    skillRoot = join(dotBase, ".catpaw", "skills");
+    agentRoot = join(dotBase, ".catpaw", "agents");
   } else if (platform === "codebuddy") {
     const note = join(base, "README.md");
     files.set(

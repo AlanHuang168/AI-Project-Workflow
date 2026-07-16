@@ -6,7 +6,7 @@
 
 [English](./README.md)
 
-一套面向 Cursor、Claude Code、Codex、Qoder、CodeBuddy、TRAE 以及其他 AI 编码助手的通用 AI 原生软件交付工作流。一份规范的 `core/` 单一真相源、每个工具一层轻量适配、一个跟踪进度的状态文件,以及负责安装与校验的 CLI。
+一套面向 Cursor、Claude Code、Codex、Qoder、CodeBuddy、CatPaw、TRAE 以及其他 AI 编码助手的通用 AI 原生软件交付工作流。一份规范的 `core/` 单一真相源、每个工具一层轻量适配、一个跟踪进度的状态文件,以及负责安装与校验的 CLI。
 
 ## 为什么需要它
 
@@ -56,7 +56,7 @@ npm install -g @dayahs/ai-project-workflow
 apw init my-app --platform cursor
 ```
 
-支持的平台:`cursor`、`trae`、`qoder`、`codebuddy`、`claude-code`、`codex`、`all`。
+支持的平台:`cursor`、`trae`、`qoder`、`codebuddy`、`catpaw`、`claude-code`、`codex`、`all`。
 
 ## 已验证平台
 
@@ -67,6 +67,7 @@ apw init my-app --platform cursor
 | Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
 | TRAE | ✅ Verified | [Report](./docs/testing/trae.md) |
 | CodeBuddy | ✅ Verified | [Report](./docs/testing/codebuddy.md) |
+| CatPaw | ⏳ Pending | — |
 | Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
 
 完整结果见 [compatibility matrix](./docs/testing/compatibility-matrix.md)。
@@ -176,6 +177,7 @@ stages:
 | TRAE | `.trae/rules.md`、`.trae/skills/`、`.trae/agents/` | 把 `.trae/rules.md` 添加为项目规则。TRAE 的自定义智能体在其 UI 中配置——创建时把 `.trae/agents/` 里的角色定义粘贴进去。 |
 | Qoder | `.qoder/skills/`、`.qoder/agents/` | 在提示词中引用 Skill 文件,或依赖根目录的 `AGENTS.md`。 |
 | CodeBuddy | `.codebuddy/skills/`、`.codebuddy/agents/`、适配说明 | 最小兼容适配;回退到 `AGENTS.md`。 |
+| CatPaw | `.catpaw/rules/ai-sdd.md`(ruleType: Always)、`.catpaw/skills/`、`.catpaw/agents/` | Always 规则对每次对话生效,把 AI 指向当前阶段的 Skill。可在 CatPaw 设置里额外开启 CLAUDE.md 与 `.cursor/rules` 兼容获得双保险。 |
 
 Claude Code 已通过自然语言阶段指令完成真实验证，例如输入 `prd` 或“开始 PRD 阶段”。测试环境中未识别 APW 原生斜杠命令，但不影响工作流执行。详见 [Claude Code 报告](./docs/testing/claude-code.md)。
 

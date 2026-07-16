@@ -6,7 +6,7 @@
 
 [中文文档](./README.zh-CN.md)
 
-A universal, AI-native software delivery workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, TRAE, and other AI coding assistants. One canonical `core/` source, lightweight adapters per tool, a state file that tracks progress, and a CLI that installs and validates everything.
+A universal, AI-native software delivery workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, CatPaw, TRAE, and other AI coding assistants. One canonical `core/` source, lightweight adapters per tool, a state file that tracks progress, and a CLI that installs and validates everything.
 
 ## Why
 
@@ -57,7 +57,7 @@ npm install -g @dayahs/ai-project-workflow
 apw init my-app --platform cursor
 ```
 
-Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `claude-code`, `codex`, `all`.
+Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `catpaw`, `claude-code`, `codex`, `all`.
 
 ## Verified platforms
 
@@ -68,6 +68,7 @@ Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `claude-code`, `cod
 | Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
 | TRAE | ✅ Verified | [Report](./docs/testing/trae.md) |
 | CodeBuddy | ✅ Verified | [Report](./docs/testing/codebuddy.md) |
+| CatPaw | ⏳ Pending | — |
 | Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
 
 See the full [compatibility matrix](./docs/testing/compatibility-matrix.md).
@@ -175,6 +176,7 @@ What gets installed and how the workflow is triggered, per tool:
 | TRAE | `.trae/rules.md`, `.trae/skills/`, `.trae/agents/` | Add `.trae/rules.md` as project rules. TRAE custom agents are configured in its UI — paste the role definitions from `.trae/agents/` when creating them. |
 | Qoder | `.qoder/skills/`, `.qoder/agents/` | Reference the Skill files in your prompts, or rely on the root `AGENTS.md`. |
 | CodeBuddy | `.codebuddy/skills/`, `.codebuddy/agents/`, adapter note | Minimal compatibility adapter; falls back to `AGENTS.md`. |
+| CatPaw | `.catpaw/rules/ai-sdd.md` (ruleType: Always), `.catpaw/skills/`, `.catpaw/agents/` | The Always rule applies to every conversation and points the agent at the active Skill. Optionally enable CLAUDE.md and `.cursor/rules` compatibility in CatPaw settings for extra coverage. |
 
 Claude Code was verified using natural-language stage instructions such as `prd` or `start the PRD stage`; native APW slash commands were not available in the tested environment. See the [Claude Code report](./docs/testing/claude-code.md).
 
