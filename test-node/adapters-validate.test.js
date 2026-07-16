@@ -19,7 +19,7 @@ test("sync detects generated adapter drift", async () => {
   assert.equal((await initCommand(root, { platform: "codex", force: false, dryRun: false })).code, 0);
   assert.equal((await syncAdapters(root, { platform: "codex" })).code, 0);
 
-  const note = join(root, "adapters", "codex", "README.md");
+  const note = join(root, ".ai-workflow", "adapters", "codex", "README.md");
   const original = await readFile(note, "utf8");
   await writeFile(note, `${original}\nchanged\n`, "utf8");
   const check = await checkAdapters(root, { platform: "codex" });

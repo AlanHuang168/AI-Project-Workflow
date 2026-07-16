@@ -33,9 +33,13 @@ AI Project Workflow makes delivery explicit:
                         v
     your-project/
     ├── AGENTS.md, CLAUDE.md            entry points read by the AI tool
-    ├── core/                           full copy of the canonical source
     ├── .cursor/ or .trae/ or ...       adapter files where your tool loads them
-    └── .ai-workflow/state.json         workflow state
+    └── .ai-workflow/                   everything APW-internal
+        ├── VERSION
+        ├── state.json                  workflow state
+        ├── project.yaml                optional custom stage order
+        ├── runtime/                    skills, rules, templates, schemas, agents
+        └── adapters/                   platform notes
 ```
 
 Enforcement is prompt-based. The adapter instructs the AI agent to read the active Skill, verify upstream documents, and update the state file before moving on. The CLI verifies the files (`apw validate`, `apw status`); the agent follows the contract because every entry point tells it to. If an agent drifts, point it back to `AGENTS.md`.
@@ -87,7 +91,7 @@ This is what actually happens after installation, using a todo web app in Cursor
    npx @dayahs/ai-project-workflow init todo-app --platform cursor
    ```
 
-   `todo-app/` now contains `AGENTS.md`, `core/`, `.cursor/`, and `.ai-workflow/state.json` with `currentStage: "init"`.
+   `todo-app/` now contains `AGENTS.md`, `CLAUDE.md`, `.cursor/`, and a `.ai-workflow/` directory holding the runtime, the state file (`currentStage: "init"`) and everything else APW-internal. The project root stays clean.
 
 2. **Start the first stage.** Open `todo-app` in Cursor and tell the agent:
 
@@ -95,7 +99,7 @@ This is what actually happens after installation, using a todo web app in Cursor
    /prd I want to build a todo web app for small teams
    ```
 
-   The rule in `.cursor/rules/ai-sdd.mdc` is always attached, so the agent reads `core/skills/prd/SKILL.md`, asks clarifying questions first, then writes `docs/PRD.md` and updates the state file.
+   The rule in `.cursor/rules/ai-sdd.mdc` is always attached, so the agent reads `.ai-workflow/runtime/skills/prd/SKILL.md`, asks clarifying questions first, then writes `docs/PRD.md` and updates the state file.
 
 3. **Review and gate.** Read `docs/PRD.md` yourself. The agent stops after each stage; nothing advances without your confirmation.
 
@@ -133,13 +137,13 @@ Upstream documents are authoritative. If the code disagrees with the SDD, fix th
 
 ## Configurable workflows
 
-APW uses the built-in eight-stage workflow when a project has no `.apw/project.yaml` file:
+APW uses the built-in eight-stage workflow when a project has no `.ai-workflow/project.yaml` file:
 
 ```text
 init -> prd -> hld -> sdd -> impl -> review -> deploy -> retro
 ```
 
-Projects can define a stage order in `.apw/project.yaml`:
+Projects can define a stage order in `.ai-workflow/project.yaml` (a legacy `.apw/project.yaml` is still honored):
 
 ```yaml
 protocolVersion: 1.0.0
@@ -157,9 +161,9 @@ Stage ids must start with a lowercase letter and may contain lowercase letters, 
 Custom stage Skills are resolved in this order:
 
 ```text
-1. .apw/skills/<stage>/SKILL.md
+1. .ai-workflow/skills/<stage>/SKILL.md (legacy .apw/skills/ still honored)
 2. installed platform Skill
-3. core/skills/<stage>/SKILL.md
+3. .ai-workflow/runtime/skills/<stage>/SKILL.md (core/skills/ in this repository)
 ```
 
 The project-level YAML parser intentionally supports only this documented subset: scalar `protocolVersion`, a `stages` list, string stage ids, and object stage entries with `id`, `title`, and `description`. It does not support anchors, aliases, multiline blocks, inline collections, or arbitrary nesting.
@@ -171,8 +175,8 @@ What gets installed and how the workflow is triggered, per tool:
 | Tool | Files installed | How it loads |
 |---|---|---|
 | Cursor | `.cursor/rules/ai-sdd.mdc` (always applied), `.cursor/skills/`, `.cursor/agents/` | The rule auto-attaches to every chat and points the agent at the active Skill. Type the stage command (for example `/prd`) in chat. |
-| Claude Code | `CLAUDE.md`, `AGENTS.md`, `core/` | `CLAUDE.md` is read automatically at session start. |
-| Codex | `AGENTS.md`, `core/` | Codex reads `AGENTS.md` natively. |
+| Claude Code | `CLAUDE.md`, `AGENTS.md`, `.ai-workflow/runtime/` | `CLAUDE.md` is read automatically at session start. |
+| Codex | `AGENTS.md`, `.ai-workflow/runtime/` | Codex reads `AGENTS.md` natively. |
 | TRAE | `.trae/rules.md`, `.trae/skills/`, `.trae/agents/` | Add `.trae/rules.md` as project rules. TRAE custom agents are configured in its UI — paste the role definitions from `.trae/agents/` when creating them. |
 | Qoder | `.qoder/skills/`, `.qoder/agents/` | Reference the Skill files in your prompts, or rely on the root `AGENTS.md`. |
 | CodeBuddy | `.codebuddy/skills/`, `.codebuddy/agents/`, adapter note | Minimal compatibility adapter; falls back to `AGENTS.md`. |
@@ -204,7 +208,7 @@ Target projects track progress in `.ai-workflow/state.json`:
 }
 ```
 
-The schema lives at `core/schemas/workflow-state.schema.json`. The agent updates this file at the end of every stage; `apw status` reads it back.
+The schema lives at `.ai-workflow/runtime/schemas/workflow-state.schema.json` in installed projects (`core/schemas/` in this repository). The agent updates this file at the end of every stage; `apw status` reads it back.
 
 ## CLI reference
 
@@ -237,7 +241,7 @@ Yes — say so explicitly. The agent records the skip and your reason in `skippe
 Yes. Install with `--platform all` (or run `apw install` again with another platform). Adapters live in separate directories and coexist.
 
 **How do I upgrade after a new package version?**
-Update the package, then re-run `apw install .` in the project — your edited files are preserved and incoming changes appear as `.ai-sdd.new` files. Run `apw validate .` afterwards.
+Update the package, then re-run `apw install .` in the project — your edited files are preserved and incoming changes appear as `.ai-sdd.new` files. Run `apw validate .` afterwards. Projects installed before the consolidated layout (with `core/` at the project root) upgrade with `apw migrate . --apply`.
 
 **A stage went wrong. How do I go back?**
 Each Skill defines rollback rules: broken design returns to `sdd`, wrong architecture boundaries return to `hld`, missing requirements return to `prd`. Revise the upstream document first, then rerun the downstream stages.
@@ -263,7 +267,7 @@ examples/configurable-workflow/
 test-node/           test suite (node --test)
 ```
 
-`core/` is the only canonical source. Adapter files are generated — edit `core/` and run `apw sync . --platform all`.
+`core/` is the only canonical source in this repository. Installed projects receive the same content under `.ai-workflow/runtime/`. Adapter files are generated — edit `core/` and run `apw sync . --platform all`.
 
 ## Extending
 

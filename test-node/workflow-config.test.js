@@ -114,9 +114,10 @@ test("validateProject uses stages from .apw/project.yaml", async () => {
   await writeProjectSkill(root, "beta");
   assert.equal((await initCommand(root, { platform: "codex", force: false, dryRun: false })).code, 0);
 
-  for (const agent of await readdir(join(root, "core", "agents"))) {
+  const agentsDir = join(root, ".ai-workflow", "runtime", "agents");
+  for (const agent of await readdir(agentsDir)) {
     await writeFile(
-      join(root, "core", "agents", agent),
+      join(agentsDir, agent),
       "---\nname: custom-agent\ndefault_skills:\n  - alpha\n---\n\n# Custom Agent\n",
       "utf8"
     );
@@ -145,7 +146,7 @@ test(".apw project Skill takes priority over core Skill", async () => {
   await writeProjectSkill(root, "init");
   assert.equal((await initCommand(root, { platform: "codex", force: false, dryRun: false })).code, 0);
   await writeFile(
-    join(root, "core", "skills", "init", "SKILL.md"),
+    join(root, ".ai-workflow", "runtime", "skills", "init", "SKILL.md"),
     "---\nname: wrong\nstage: wrong\nversion: 1.0.0\ndescription: wrong\n---\n",
     "utf8"
   );

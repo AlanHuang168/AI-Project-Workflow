@@ -5,6 +5,7 @@ import { exists, listFiles, readText } from "./fs-utils.js";
 import { rel } from "./path-utils.js";
 import { loadWorkflowConfig, stageIds } from "./workflow-config.js";
 import { readState } from "./state.js";
+import { WORKFLOW_DIR, detectContentMode, runtimeBase, versionPath } from "./layout.js";
 
 const fixedModelTerms = ["so" + "nnet", "o" + "pus", "g" + "pt-4", "g" + "pt-5", "claude" + "-3", "claude" + "-4"];
 const fixedModelRe = new RegExp(`\\b(${fixedModelTerms.map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "i");
@@ -75,43 +76,60 @@ function adapterSkillPaths(root, stage, platforms) {
   return paths;
 }
 
-async function skillLookupPaths(root, stage) {
+function customSkillDirs(root) {
+  return [join(root, WORKFLOW_DIR, "skills"), join(root, ".apw", "skills")];
+}
+
+async function skillLookupPaths(root, stage, contentMode) {
   const platforms = await presentPlatforms(root);
   return [
-    rel(root, join(root, ".apw", "skills", stage, "SKILL.md")),
+    ...customSkillDirs(root).map((dir) => rel(root, join(dir, stage, "SKILL.md"))),
     ...adapterSkillPaths(root, stage, platforms).map((path) => rel(root, path)),
-    rel(root, join(root, "core", "skills", stage, "SKILL.md"))
+    rel(root, join(runtimeBase(root, contentMode), "skills", stage, "SKILL.md"))
   ];
 }
 
-async function findStageSkill(root, stage) {
-  const projectSkill = join(root, ".apw", "skills", stage, "SKILL.md");
-  if (await exists(projectSkill)) return projectSkill;
+async function findStageSkill(root, stage, contentMode) {
+  for (const dir of customSkillDirs(root)) {
+    const projectSkill = join(dir, stage, "SKILL.md");
+    if (await exists(projectSkill)) return projectSkill;
+  }
 
   for (const path of adapterSkillPaths(root, stage, await presentPlatforms(root))) {
     if (await exists(path)) return path;
   }
 
-  const coreSkill = join(root, "core", "skills", stage, "SKILL.md");
+  const coreSkill = join(runtimeBase(root, contentMode), "skills", stage, "SKILL.md");
   if (await exists(coreSkill)) return coreSkill;
   return null;
 }
 
-async function checkStructure(root, r, config) {
-  for (const path of ["AGENTS.md", "CLAUDE.md", "VERSION", "core/rules", "core/skills", "core/agents", "core/templates", "core/schemas"]) {
+async function checkStructure(root, r, config, contentMode) {
+  const base = rel(root, runtimeBase(root, contentMode)) || "core";
+  const required = [
+    "AGENTS.md",
+    "CLAUDE.md",
+    rel(root, versionPath(root, contentMode)),
+    `${base}/rules`,
+    `${base}/skills`,
+    `${base}/agents`,
+    `${base}/templates`,
+    `${base}/schemas`
+  ];
+  for (const path of required) {
     if (await exists(join(root, path))) r.pass(`exists ${path}`);
     else r.fail(`missing ${path}`);
   }
   for (const stage of stageIds(config)) {
-    const path = await findStageSkill(root, stage);
+    const path = await findStageSkill(root, stage, contentMode);
     if (path) r.pass(`skill exists ${stage}`);
-    else r.fail(`missing skill ${stage}; looked in ${(await skillLookupPaths(root, stage)).join(", ")}`);
+    else r.fail(`missing skill ${stage}; looked in ${(await skillLookupPaths(root, stage, contentMode)).join(", ")}`);
   }
 }
 
-async function checkFrontmatter(root, r, config) {
+async function checkFrontmatter(root, r, config, contentMode) {
   for (const stage of stageIds(config)) {
-    const path = await findStageSkill(root, stage);
+    const path = await findStageSkill(root, stage, contentMode);
     if (!path) continue;
     const fm = parseFrontmatter(await readText(path));
     if (!Object.keys(fm).length) {
@@ -126,14 +144,15 @@ async function checkFrontmatter(root, r, config) {
   }
 }
 
-async function checkTemplatesSchemaAgents(root, r, config) {
+async function checkTemplatesSchemaAgents(root, r, config, contentMode) {
+  const base = runtimeBase(root, contentMode);
   for (const name of TEMPLATES) {
-    const path = join(root, "core", "templates", `${name}.template.md`);
+    const path = join(base, "templates", `${name}.template.md`);
     if ((await exists(path)) && (await readText(path)).trim()) r.pass(`template ${name}`);
     else r.fail(`missing template ${name}`);
   }
 
-  const schema = join(root, "core", "schemas", "workflow-state.schema.json");
+  const schema = join(base, "schemas", "workflow-state.schema.json");
   try {
     JSON.parse(await readText(schema));
     r.pass("state schema valid json");
@@ -142,7 +161,7 @@ async function checkTemplatesSchemaAgents(root, r, config) {
   }
 
   const valid = new Set([...STAGES, ...stageIds(config)]);
-  for (const path of await listFiles(join(root, "core", "agents"))) {
+  for (const path of await listFiles(join(base, "agents"))) {
     if (!path.endsWith(".md")) continue;
     const fm = parseFrontmatter(await readText(path));
     const skills = Array.isArray(fm.default_skills) ? fm.default_skills : (fm.default_skills ? [fm.default_skills] : []);
@@ -183,10 +202,10 @@ async function checkStateClosure(root, r, config) {
   }
 }
 
-async function checkReferences(root, r) {
+async function checkReferences(root, r, contentMode) {
   const pattern = /`([^`\n]+(?:\.md|\.json))`/g;
   const optional = new Set(["README.md", "package.json", "pyproject.toml", "pom.xml", "build.gradle", "go.mod", "Cargo.toml"]);
-  const starts = [join(root, "AGENTS.md"), join(root, "CLAUDE.md"), join(root, "core")];
+  const starts = [join(root, "AGENTS.md"), join(root, "CLAUDE.md"), runtimeBase(root, contentMode)];
   for (const start of starts) {
     const files = (await exists(start)) && (await listFiles(start)).length ? await listFiles(start) : ((await exists(start)) ? [start] : []);
     for (const path of files.filter((item) => item.endsWith(".md") || item.endsWith(".mdc"))) {
@@ -226,12 +245,13 @@ async function checkResidualTerms(root, r) {
 
 export async function validateProject(root, options = {}) {
   const r = new Reporter();
+  const contentMode = await detectContentMode(root);
   const loadedConfig = await checkWorkflowConfig(root, r);
-  await checkStructure(root, r, loadedConfig.config);
-  await checkFrontmatter(root, r, loadedConfig.config);
-  await checkTemplatesSchemaAgents(root, r, loadedConfig.config);
+  await checkStructure(root, r, loadedConfig.config, contentMode);
+  await checkFrontmatter(root, r, loadedConfig.config, contentMode);
+  await checkTemplatesSchemaAgents(root, r, loadedConfig.config, contentMode);
   await checkStateClosure(root, r, loadedConfig.config);
-  await checkReferences(root, r);
+  await checkReferences(root, r, contentMode);
   await checkResidualTerms(root, r);
   const adapterResult = await checkAdapters(root, { platform: options.platform });
   r.messages.push(...adapterResult.messages);

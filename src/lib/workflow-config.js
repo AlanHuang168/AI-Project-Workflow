@@ -3,7 +3,10 @@ import { DEFAULT_WORKFLOW_CONFIG, WORKFLOW_VERSION } from "./constants.js";
 import { exists, readText } from "./fs-utils.js";
 import { rel } from "./path-utils.js";
 
-export const WORKFLOW_CONFIG_PATH = join(".apw", "project.yaml");
+export const WORKFLOW_CONFIG_PATH = join(".ai-workflow", "project.yaml");
+// Older installs kept the config under .apw/; it is still honored when the
+// primary path is absent. `apw migrate` moves it to the new location.
+export const LEGACY_WORKFLOW_CONFIG_PATH = join(".apw", "project.yaml");
 
 const TOP_LEVEL_KEYS = new Set(["protocolVersion", "stages"]);
 const STAGE_KEYS = new Set(["id", "title", "description"]);
@@ -158,14 +161,19 @@ export function validateWorkflowConfig(raw, config) {
 }
 
 export async function loadWorkflowConfig(root) {
-  const path = join(root, WORKFLOW_CONFIG_PATH);
+  let path = join(root, WORKFLOW_CONFIG_PATH);
   if (!(await exists(path))) {
-    return {
-      source: "default",
-      path,
-      config: cloneDefaultConfig(),
-      errors: []
-    };
+    const legacy = join(root, LEGACY_WORKFLOW_CONFIG_PATH);
+    if (await exists(legacy)) {
+      path = legacy;
+    } else {
+      return {
+        source: "default",
+        path,
+        config: cloneDefaultConfig(),
+        errors: []
+      };
+    }
   }
 
   try {
