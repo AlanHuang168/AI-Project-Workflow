@@ -38,6 +38,7 @@ No Qoder screenshot files were present in `docs/testing/images/` at documentatio
 ## Known Issues
 
 - Qoder live Skill loading and workflow execution still need verification when usage credits are available.
+- This entry remains marked pending because verification requires an active Qoder session with usage credits, which was unavailable at documentation time.
 
 ## Last Verified
 
