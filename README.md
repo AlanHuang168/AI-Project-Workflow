@@ -4,79 +4,78 @@
 [![npm version](https://img.shields.io/npm/v/%40dayahs%2Fai-project-workflow.svg)](https://www.npmjs.com/package/@dayahs/ai-project-workflow)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-[中文文档](./README.zh-CN.md)
+[English](./README.en.md)
 
-A universal, AI-native software delivery workflow for Cursor, Claude Code, Codex, Qoder, CodeBuddy, CatPaw, TRAE, and other AI coding assistants. One canonical `core/` source, lightweight adapters per tool, a state file that tracks progress, and a CLI that installs and validates everything.
+一套面向 Cursor、Claude Code、Codex、Qoder、CodeBuddy、CatPaw、TRAE 以及其他 AI 编码助手的通用 AI 原生软件交付工作流。一份规范的 `core/` 单一真相源、每个工具一层轻量适配、一个跟踪进度的状态文件,以及负责安装与校验的 CLI。
 
-## Why
+## 为什么需要它
 
-AI coding agents rush into implementation while requirements, architecture, design, and tests are still unclear. The result is code nobody asked for, silent scope creep, and "all tests pass" reports for tests that never ran.
+当需求、架构、设计和测试还不清晰时,AI 编码助手就急着写代码。结果是:没人要的功能、悄悄扩大的范围,以及从未真正运行过的测试被报告成「全部通过」。
 
-AI Project Workflow makes delivery explicit:
+AI Project Workflow 把交付过程显式化:
 
-- Every stage has a Skill contract: preconditions, allowed changes, outputs, and stop conditions.
-- Every deliverable is written to a file under `docs/`, never only printed in chat.
-- Progress is tracked in `.ai-workflow/state.json` and gated stage by stage.
-- Verification must be reported honestly: commands actually executed, real results, remaining risks.
+- 每个阶段都有 Skill 契约:前置条件、允许的改动、产出物、停止条件。
+- 每个交付物都必须写入 `docs/` 下的文件,禁止只在对话里打印。
+- 进度记录在 `.ai-workflow/state.json` 中,逐阶段设门禁。
+- 验证必须诚实报告:真正执行过的命令、真实结果、遗留风险。
 
-## How it works
+## 工作原理
 
 ```text
-                core/  (single canonical source)
-                ├── rules/       global working rules
-                ├── skills/      one contract per stage
-                ├── agents/      role definitions
-                ├── templates/   document skeletons
-                └── schemas/     state file schema
+                core/  (唯一规范源)
+                ├── rules/       全局工作规则
+                ├── skills/      每阶段一份契约
+                ├── agents/      角色定义
+                ├── templates/   文档骨架
+                └── schemas/     状态文件 schema
                         |
-        apw init <target> --platform <tool>
+        apw init <目标目录> --platform <工具>
 ```
 
-APW stores its runtime under `.ai-workflow/` to keep the project root clean while remaining backward compatible with legacy layouts.
+APW 将运行时文件收纳在 `.ai-workflow/` 下,让项目根目录保持干净,同时继续兼容旧目录布局。
 
-After installation, the project root only keeps the files your AI tool needs to discover automatically. APW's internal runtime, state, version, and adapter notes live under the hidden `.ai-workflow/` directory:
+安装后,项目根目录只保留 AI 工具需要自动发现的入口文件。APW 自己的运行时、状态、版本和适配说明都会放进隐藏目录 `.ai-workflow/`:
 
 ```text
 your-project/
-├── AGENTS.md                 shared AI working rules
-├── CLAUDE.md                 Claude-compatible entry point
-├── docs/                     stage deliverables written by the workflow
-├── .cursor/ .catpaw/ ...     platform-specific adapter files
-└── .ai-workflow/             hidden APW runtime directory
-    ├── VERSION               installed APW package version
-    ├── state.json            current stage and completed stages
-    ├── project.yaml          optional custom workflow config
-    ├── runtime/              installed rules, Skills, agents, templates, schemas
-    └── adapters/             platform notes for non-dot-directory adapters
+├── AGENTS.md                 通用 AI 工作规则
+├── CLAUDE.md                 Claude 兼容入口
+├── docs/                     工作流各阶段生成的交付物
+├── .cursor/ .catpaw/ ...     各平台真正加载的适配文件
+└── .ai-workflow/             隐藏的 APW 运行目录
+    ├── VERSION               已安装的 APW 包版本
+    ├── state.json            当前阶段与已完成阶段
+    ├── project.yaml          可选的自定义工作流配置
+    ├── runtime/              已安装的 rules、Skills、agents、templates、schemas
+    └── adapters/             非点目录平台的适配说明
 ```
 
-Older projects that still have root-level `core/` or `VERSION` remain valid: APW checks `.ai-workflow/` first and falls back to the legacy layout when needed.
+旧项目如果仍然使用根目录 `core/` 或 `VERSION`,也仍然有效:APW 会优先读取 `.ai-workflow/`,需要时再回退到旧目录布局。
 
-Enforcement is prompt-based. The adapter instructs the AI agent to read the active Skill, verify upstream documents, and update the state file before moving on. The CLI verifies the files (`apw validate`, `apw status`); the agent follows the contract because every entry point tells it to. If an agent drifts, point it back to `AGENTS.md`.
+约束是基于提示词的:适配层指示 AI 先读当前阶段的 Skill、核对上游文档、更新状态文件,然后才能推进。CLI 负责校验文件(`apw validate`、`apw status`);AI 遵守契约是因为每个入口都这样要求它。如果 AI 跑偏了,让它重新阅读 `AGENTS.md`。
 
-> New to Node.js or command-line tools?
-> Read the [Beginner Installation Guide](./docs/getting-started/beginner-guide.md).
-> It walks through installing Node.js, opening a terminal, and running your first `apw init` command step by step.
+> 不会 Node.js、npm 或终端命令？
+> 查看[零基础安装指南](./docs/getting-started/beginner-guide.zh-CN.md)。
 
-## Quick start
+## 快速开始
 
 ```bash
 npx @dayahs/ai-project-workflow init . --platform cursor
 ```
 
-Or install globally:
+或全局安装:
 
 ```bash
 npm install -g @dayahs/ai-project-workflow
 apw init my-app --platform cursor
 ```
 
-Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `catpaw`, `claude-code`, `codex`, `all`.
+支持的平台:`cursor`、`trae`、`qoder`、`codebuddy`、`catpaw`、`claude-code`、`codex`、`all`。
 
-## Verified platforms
+## 已验证平台
 
-| Platform | Status | Evidence |
-| -------- | ------ | -------- |
+| 平台 | 状态 | 证据 |
+| ---- | ---- | ---- |
 | Cursor | ✅ Verified | [Report](./docs/testing/cursor.md) |
 | Claude Code | ✅ Verified | [Report](./docs/testing/claude-code.md) |
 | Codex CLI | ✅ Verified | [Report](./docs/testing/codex.md) |
@@ -85,75 +84,77 @@ Supported platforms: `cursor`, `trae`, `qoder`, `codebuddy`, `catpaw`, `claude-c
 | CatPaw | ✅ Verified | [Report](./docs/testing/catpaw.md) |
 | Qoder | ⏳ Pending | [Report](./docs/testing/qoder.md) |
 
-See the full [compatibility matrix](./docs/testing/compatibility-matrix.md).
+完整结果见 [compatibility matrix](./docs/testing/compatibility-matrix.md)。
+
+Qoder 待验证：当前测试账号额度不足，尚未完成真实环境验证。
 
 ![Cursor workflow verification](./docs/testing/images/cursor/cursor2.png)
 
 ![CodeBuddy Skills and Commands recognized](./docs/testing/images/codebuddy/1.png)
 
-## Your first project, end to end
+## 端到端:你的第一个项目
 
-This is what actually happens after installation, using a todo web app in Cursor as the example.
+安装之后实际会发生什么——以在 Cursor 里做一个待办清单 Web 应用为例。
 
-1. **Install the workflow into a new project:**
+1. **把工作流装进新项目:**
 
    ```bash
    npx @dayahs/ai-project-workflow init todo-app --platform cursor
    ```
 
-   `todo-app/` now contains `AGENTS.md`, `CLAUDE.md`, `.cursor/`, and a `.ai-workflow/` directory holding the runtime, the state file (`currentStage: "init"`) and everything else APW-internal. The project root stays clean.
+   `todo-app/` 现在包含 `AGENTS.md`、`CLAUDE.md`、`.cursor/`,以及一个收纳全部 APW 内部实现的 `.ai-workflow/` 目录(runtime、状态文件 `currentStage: "init"` 等)。项目根目录保持干净。
 
-2. **Start the first stage.** Open `todo-app` in Cursor and tell the agent:
+2. **启动第一个阶段。** 在 Cursor 中打开 `todo-app`,对 AI 说:
 
    ```text
-   /prd I want to build a todo web app for small teams
+   /prd 我要做一个面向小团队的待办清单 Web 应用
    ```
 
-   The rule in `.cursor/rules/ai-sdd.mdc` is always attached, so the agent reads `.ai-workflow/runtime/skills/prd/SKILL.md`, asks clarifying questions first, then writes `docs/PRD.md` and updates the state file.
+   `.cursor/rules/ai-sdd.mdc` 规则始终挂载,AI 会先读 `.ai-workflow/runtime/skills/prd/SKILL.md`,先反问澄清,然后把产出写入 `docs/PRD.md` 并更新状态文件。
 
-3. **Review and gate.** Read `docs/PRD.md` yourself. The agent stops after each stage; nothing advances without your confirmation.
+3. **人工审查与门禁。** 你自己读一遍 `docs/PRD.md`。AI 在每个阶段结束后都会停下;没有你的确认,流程不会前进。
 
-4. **Continue stage by stage:** `/hld` writes `docs/ARCH.md`, `/sdd` writes `docs/SDD.md` plus `docs/TEST.md`, `/impl` produces code with real verification runs, `/review` writes `docs/REVIEW.md`, then `/deploy` and `/retro`.
+4. **逐阶段继续:** `/hld` 产出 `docs/ARCH.md`,`/sdd` 产出 `docs/SDD.md` 和 `docs/TEST.md`,`/impl` 产出代码与真实的验证运行,`/review` 产出 `docs/REVIEW.md`,然后是 `/deploy` 和 `/retro`。
 
-5. **Check progress at any time:**
+5. **随时查看进度:**
 
    ```bash
    apw status .
    apw validate .
    ```
 
-At every step the agent must report: files modified, commands executed, real verification results, and remaining risks.
+每一步 AI 都必须报告:改动的文件、执行的命令、真实的验证结果、遗留的风险。
 
-## The eight stages
+## 八个阶段
 
-| Stage | Command | Reads | Writes | You confirm |
+| 阶段 | 命令 | 读取 | 产出 | 你确认什么 |
 |---|---|---|---|---|
-| init | `/init` | your brief | project skeleton, state file | project scope |
-| prd | `/prd` | your brief | `docs/PRD.md` | requirements |
-| hld | `/hld` | PRD | `docs/ARCH.md` | architecture |
-| sdd | `/sdd` | PRD, ARCH | `docs/SDD.md`, `docs/TEST.md` | detailed design |
-| impl | `/impl` | SDD, TEST | code plus verification results | implementation |
-| review | `/review` | SDD, code | `docs/REVIEW.md` | findings and fixes |
-| deploy | `/deploy` | REVIEW | `docs/DEPLOY.md` | going live |
-| retro | `/retro` | everything | `docs/RETRO.md` | lessons learned |
+| init | `/init` | 你的描述 | 项目骨架、状态文件 | 项目范围 |
+| prd | `/prd` | 你的描述 | `docs/PRD.md` | 需求 |
+| hld | `/hld` | PRD | `docs/ARCH.md` | 架构 |
+| sdd | `/sdd` | PRD、ARCH | `docs/SDD.md`、`docs/TEST.md` | 详细设计 |
+| impl | `/impl` | SDD、TEST | 代码 + 验证结果 | 实现 |
+| review | `/review` | SDD、代码 | `docs/REVIEW.md` | 问题与修复 |
+| deploy | `/deploy` | REVIEW | `docs/DEPLOY.md` | 上线 |
+| retro | `/retro` | 全部 | `docs/RETRO.md` | 经验教训 |
 
-**Document priority — who wins on conflict:**
+**文档优先级——冲突时以谁为准:**
 
 ```text
 PRD -> Architecture -> SDD -> Test Plan -> Code
 ```
 
-Upstream documents are authoritative. If the code disagrees with the SDD, fix the code or formally revise the SDD first — never silently diverge. A stage may be skipped only with your explicit approval, and the skip plus its reason is recorded under `skippedStages` in the state file.
+上游文档是权威。代码与 SDD 不一致时,要么改代码,要么先正式修订 SDD——绝不允许悄悄偏离。阶段只有在你明确批准时才能跳过,跳过及其原因会记录到状态文件的 `skippedStages` 中。
 
-## Configurable workflows
+## 可配置工作流
 
-APW uses the built-in eight-stage workflow when a project has no `.ai-workflow/project.yaml` file:
+当项目没有 `.ai-workflow/project.yaml` 时,APW 使用内置八阶段:
 
 ```text
 init -> prd -> hld -> sdd -> impl -> review -> deploy -> retro
 ```
 
-Projects can define a stage order in `.ai-workflow/project.yaml` (a legacy `.apw/project.yaml` is still honored):
+项目可以在 `.ai-workflow/project.yaml` 中定义阶段顺序(旧路径 `.apw/project.yaml` 仍被兼容):
 
 ```yaml
 protocolVersion: 1.0.0
@@ -166,39 +167,39 @@ stages:
   - review
 ```
 
-Stage ids must start with a lowercase letter and may contain lowercase letters, numbers, and hyphens. Duplicate ids, empty `protocolVersion`, empty `stages`, and unknown fields are rejected.
+阶段 id 必须以小写字母开头,只能包含小写字母、数字和连字符。重复 id、空 `protocolVersion`、空 `stages` 和未知字段都会被拒绝。
 
-Custom stage Skills are resolved in this order:
+自定义阶段的 Skill 查找顺序:
 
 ```text
-1. .ai-workflow/skills/<stage>/SKILL.md (legacy .apw/skills/ still honored)
-2. installed platform Skill
-3. .ai-workflow/runtime/skills/<stage>/SKILL.md (core/skills/ in this repository)
+1. .ai-workflow/skills/<stage>/SKILL.md(旧路径 .apw/skills/ 仍被兼容)
+2. 已安装平台中的 Skill
+3. .ai-workflow/runtime/skills/<stage>/SKILL.md(本仓库内为 core/skills/)
 ```
 
-The project-level YAML parser intentionally supports only this documented subset: scalar `protocolVersion`, a `stages` list, string stage ids, and object stage entries with `id`, `title`, and `description`. It does not support anchors, aliases, multiline blocks, inline collections, or arbitrary nesting.
+项目级 YAML 解析器只支持这里明确展示的子集:标量 `protocolVersion`、`stages` 列表、字符串阶段 id,以及包含 `id`、`title`、`description` 的对象阶段。它不支持 anchors、aliases、多行块、行内集合或任意深层嵌套。
 
-## Platform setup
+## 各平台安装说明
 
-What gets installed and how the workflow is triggered, per tool:
+每个工具装了什么、如何触发工作流:
 
-| Tool | Files installed | How it loads |
+| 工具 | 安装的文件 | 加载方式 |
 |---|---|---|
-| Cursor | `.cursor/rules/ai-sdd.mdc` (always applied), `.cursor/skills/`, `.cursor/agents/` | The rule auto-attaches to every chat and points the agent at the active Skill. Type the stage command (for example `/prd`) in chat. |
-| Claude Code | `CLAUDE.md`, `AGENTS.md`, `.ai-workflow/runtime/` | `CLAUDE.md` is read automatically at session start. |
-| Codex | `AGENTS.md`, `.ai-workflow/runtime/` | Codex reads `AGENTS.md` natively. |
-| TRAE | `.trae/rules.md`, `.trae/skills/`, `.trae/agents/` | Add `.trae/rules.md` as project rules. TRAE custom agents are configured in its UI — paste the role definitions from `.trae/agents/` when creating them. |
-| Qoder | `.qoder/skills/`, `.qoder/agents/` | Reference the Skill files in your prompts, or rely on the root `AGENTS.md`. |
-| CodeBuddy | `.codebuddy/skills/`, `.codebuddy/agents/`, adapter note | Minimal compatibility adapter; falls back to `AGENTS.md`. |
-| CatPaw | `.catpaw/rules/ai-sdd.md` (ruleType: Always), `.catpaw/skills/`, `.catpaw/agents/` | The Always rule applies to every conversation and points the agent at the active Skill. Optionally enable CLAUDE.md and `.cursor/rules` compatibility in CatPaw settings for extra coverage. |
+| Cursor | `.cursor/rules/ai-sdd.mdc`(始终生效)、`.cursor/skills/`、`.cursor/agents/` | 规则自动挂载到每次对话,并把 AI 指向当前阶段的 Skill。在对话里输入阶段命令(如 `/prd`)。 |
+| Claude Code | `CLAUDE.md`、`AGENTS.md`、`.ai-workflow/runtime/` | 会话启动时自动读取 `CLAUDE.md`。 |
+| Codex | `AGENTS.md`、`.ai-workflow/runtime/` | Codex 原生读取 `AGENTS.md`。 |
+| TRAE | `.trae/rules.md`、`.trae/skills/`、`.trae/agents/` | 把 `.trae/rules.md` 添加为项目规则。TRAE 的自定义智能体在其 UI 中配置——创建时把 `.trae/agents/` 里的角色定义粘贴进去。 |
+| Qoder | `.qoder/skills/`、`.qoder/agents/` | 在提示词中引用 Skill 文件,或依赖根目录的 `AGENTS.md`。 |
+| CodeBuddy | `.codebuddy/skills/`、`.codebuddy/agents/`、适配说明 | 最小兼容适配;回退到 `AGENTS.md`。 |
+| CatPaw | `.catpaw/rules/ai-sdd.md`(ruleType: Always)、`.catpaw/skills/`、`.catpaw/agents/` | Always 规则对每次对话生效,把 AI 指向当前阶段的 Skill。可在 CatPaw 设置里额外开启 CLAUDE.md 与 `.cursor/rules` 兼容获得双保险。 |
 
-Claude Code was verified using natural-language stage instructions such as `prd` or `start the PRD stage`; native APW slash commands were not available in the tested environment. See the [Claude Code report](./docs/testing/claude-code.md).
+Claude Code 已通过自然语言阶段指令完成真实验证，例如输入 `prd` 或“开始 PRD 阶段”。测试环境中未识别 APW 原生斜杠命令，但不影响工作流执行。详见 [Claude Code 报告](./docs/testing/claude-code.md)。
 
-Use the stage invocation form your tool accepts: slash-style prompts such as `/prd` where supported, or natural-language stage instructions such as `prd` or `start the PRD stage`.
+请使用当前工具可接受的阶段触发方式:支持时可使用 `/prd` 这类斜杠形式;不支持时可使用 `prd` 或“开始 PRD 阶段”这类自然语言阶段指令。
 
-## Workflow state
+## 工作流状态
 
-Target projects track progress in `.ai-workflow/state.json`:
+目标项目通过 `.ai-workflow/state.json` 跟踪进度:
 
 ```json
 {
@@ -212,103 +213,101 @@ Target projects track progress in `.ai-workflow/state.json`:
   "blockReason": "",
   "documents": { "prd": "complete", "arch": "complete", "sdd": "draft" },
   "skippedStages": [
-    { "stage": "deploy", "reason": "library project, nothing to deploy", "approvedByUser": true }
+    { "stage": "deploy", "reason": "库项目,无需部署", "approvedByUser": true }
   ],
   "lastUpdatedAt": "2026-07-14T12:00:00.000Z"
 }
 ```
 
-The schema lives at `.ai-workflow/runtime/schemas/workflow-state.schema.json` in installed projects (`core/schemas/` in this repository). The agent updates this file at the end of every stage; `apw status` reads it back.
+schema 在已安装项目中位于 `.ai-workflow/runtime/schemas/workflow-state.schema.json`(本仓库内为 `core/schemas/`)。AI 在每个阶段结束时更新此文件;`apw status` 负责读取展示。
 
-## CLI reference
+## CLI 参考
 
 ```bash
-apw init [target] --platform <tool>   # create target dir if needed, then install
-apw install [target] --platform <tool># install workflow files into an existing dir
-apw sync [target] [--platform <tool>] # regenerate adapter files from core/
-apw validate [target]                 # check structure, config, frontmatter, state, adapters
-apw status [target]                   # print workflow state and installed platforms
-apw migrate [target] [--apply]        # move legacy layouts aside (dry-run by default)
+apw init [target] --platform <tool>   # 需要时创建目标目录,然后安装
+apw install [target] --platform <tool># 向已有目录安装工作流文件
+apw sync [target] [--platform <tool>] # 从 core/ 重新生成适配文件
+apw validate [target]                 # 校验结构、配置、frontmatter、状态、适配同步
+apw status [target]                   # 打印工作流状态与已安装平台
+apw migrate [target] [--apply]        # 迁移旧目录布局(默认只预览)
 apw --help
 apw --version
 ```
 
-Safety behavior:
+安全行为:
 
-- Existing user files are never overwritten. Conflicts are written next to the original as `.ai-sdd.new` files for you to compare.
-- `--force` overwrites intentionally; `--dry-run` previews every write without touching disk.
-- Generated adapter files are marked `AUTO-GENERATED`; edit `core/` instead and run `apw sync`.
+- 绝不覆盖用户已有文件。冲突会在原文件旁生成 `.ai-sdd.new` 供你对比。
+- `--force` 表示有意覆盖;`--dry-run` 预览所有写入而不落盘。
+- 生成的适配文件带 `AUTO-GENERATED` 标记;要改请改 `core/` 然后运行 `apw sync`。
 
-## FAQ
+## 常见问题
 
-**The agent ignores the workflow and just starts coding.**
-Tell it to read `AGENTS.md` and the active Skill, then continue. Check that the adapter is actually loaded (for Cursor: the `ai-sdd` rule appears in the chat context). Enforcement is prompt-based, so an occasional nudge is expected.
+**AI 无视工作流,直接开始写代码。**
+让它先读 `AGENTS.md` 和当前阶段的 Skill 再继续。确认适配层真的被加载了(Cursor:对话上下文中出现 `ai-sdd` 规则)。约束是基于提示词的,偶尔需要人工拉回是正常的。
 
-**Can I skip a stage, for example deploy?**
-Yes — say so explicitly. The agent records the skip and your reason in `skippedStages`, and later stages treat it as approved.
+**能跳过某个阶段吗,比如 deploy?**
+可以——明确说出来即可。AI 会把跳过及你的理由记录到 `skippedStages`,后续阶段视其为已批准。
 
-**Can I use two tools on the same project?**
-Yes. Install with `--platform all` (or run `apw install` again with another platform). Adapters live in separate directories and coexist.
+**同一个项目能同时用两个工具吗?**
+可以。用 `--platform all` 安装(或对另一个平台再跑一次 `apw install`)。各适配层目录独立,互不干扰。
 
-**How do I upgrade after a new package version?**
-Update the package, then re-run `apw install .` in the project — your edited files are preserved and incoming changes appear as `.ai-sdd.new` files. Run `apw validate .` afterwards. Projects installed before the consolidated layout (with `core/` at the project root) upgrade with `apw migrate . --apply`.
+**包发新版后如何升级?**
+更新包,然后在项目里重新运行 `apw install .`——你改过的文件会被保留,新内容以 `.ai-sdd.new` 出现。之后运行 `apw validate .`。旧布局项目(`core/` 在项目根)用 `apw migrate . --apply` 一键升级到收纳布局。
 
-**A stage went wrong. How do I go back?**
-Each Skill defines rollback rules: broken design returns to `sdd`, wrong architecture boundaries return to `hld`, missing requirements return to `prd`. Revise the upstream document first, then rerun the downstream stages.
+**某个阶段做坏了,怎么回退?**
+每个 Skill 都定义了回退规则:设计无法实现回 `sdd`,架构边界错了回 `hld`,需求缺失回 `prd`。先修订上游文档,再重跑下游阶段。
 
-## How it compares
+## 与同类方案的对比
 
-- **GitHub Spec Kit** focuses on spec-first development for a smaller set of stages. AI Project Workflow adds multi-tool adapters, a machine-readable state file, and an install/validate CLI.
-- **BMAD-METHOD** centers on rich multi-agent role play. AI Project Workflow keeps roles lightweight and puts the contract in per-stage Skills that any single agent can follow.
-- **Plain rules files** (a single `AGENTS.md` or rules document) state principles but cannot gate stages or track state. This project adds per-stage contracts, document templates, state tracking, and validation.
+- **GitHub Spec Kit** 聚焦规格优先开发,阶段更少。AI Project Workflow 增加了多工具适配、机器可读的状态文件和安装/校验 CLI。
+- **BMAD-METHOD** 以丰富的多智能体角色扮演为核心。AI Project Workflow 保持角色轻量,把契约放进单个智能体就能执行的分阶段 Skill 里。
+- **纯规则文件**(单个 `AGENTS.md` 或规则文档)只能陈述原则,无法设阶段门禁、跟踪状态。本项目补上了分阶段契约、文档模板、状态跟踪与校验。
 
-## Project structure
+## 项目结构
 
 ```text
-AGENTS.md            entry point for agents that read it natively
-CLAUDE.md            lightweight entry point for Claude Code
+AGENTS.md            原生读取该文件的智能体入口
+CLAUDE.md            Claude Code 的轻量入口
 VERSION
-bin/                 CLI entry
-src/                 CLI implementation
-core/                canonical source: rules, skills, agents, templates, schemas
-adapters/            generated adapter trees, one per platform
-examples/            minimal target project
+bin/                 CLI 入口
+src/                 CLI 实现
+core/                规范源:规则、Skill、智能体、模板、schema
+adapters/            生成的适配树,每平台一份
+examples/            最小目标项目
 examples/configurable-workflow/
-test-node/           test suite (node --test)
+test-node/           测试套件(node --test)
 ```
 
-`core/` is the only canonical source in this repository. Installed projects receive the same content under `.ai-workflow/runtime/`. Adapter files are generated — edit `core/` and run `apw sync . --platform all`.
+`core/` 是本仓库的唯一规范源;已安装项目中同样的内容位于 `.ai-workflow/runtime/`。适配文件是生成物——改 `core/` 后运行 `apw sync . --platform all`。
 
-## Extending
+## 扩展
 
-**Add a Skill:** create `core/skills/<name>/SKILL.md` with the standard frontmatter and sections (Goal, Preconditions, Steps, Outputs, Acceptance Criteria, Stop Conditions, Rollback Rules, Completion Report). If it joins the core stage flow, update `src/lib/constants.js` and the tests. Then run `apw sync . --platform all` and `apw validate .`.
+**新增 Skill:** 创建 `core/skills/<name>/SKILL.md`,带标准 frontmatter 与章节(Goal、Preconditions、Steps、Outputs、Acceptance Criteria、Stop Conditions、Rollback Rules、Completion Report)。若加入核心阶段流,需同步更新 `src/lib/constants.js` 与测试。然后运行 `apw sync . --platform all` 和 `apw validate .`。
 
-**Add project stages:** create `.apw/project.yaml`, then add a Skill for each custom stage under `.apw/skills/<stage>/SKILL.md`. Run `apw validate .` before asking an agent to follow the custom flow.
+**新增项目阶段:** 创建 `.apw/project.yaml`,再为每个自定义阶段添加 `.apw/skills/<stage>/SKILL.md`。让 AI 跟随自定义流程前,先运行 `apw validate .`。
 
-**Add an adapter:** add generation rules in `src/lib/adapters.js`, keep `core/` canonical, mark generated files `AUTO-GENERATED`, add tests, then sync and validate.
+**新增适配器:** 在 `src/lib/adapters.js` 中添加生成规则,保持 `core/` 为规范源,生成文件标记 `AUTO-GENERATED`,补测试,然后同步并校验。
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor guide.
+完整贡献指南见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## Requirements
+## 环境要求
 
-- Node.js >= 20 and npm. No other runtime is required.
+- Node.js >= 20 与 npm。不需要其他运行时。
 
-## Known limitations
+## 已知限制
 
-- Enforcement is prompt-based: the CLI validates files and state, but only the AI tool's context (rules, entry points) makes the agent follow the process. Expect to redirect an agent occasionally.
-- The workflow provides structure and validation; it does not replace project-specific engineering judgment.
-- Deployment steps depend on the target project's stack and environment.
+- 约束是基于提示词的:CLI 校验文件与状态,但让 AI 遵守流程的是工具侧的上下文(规则、入口文件)。偶尔需要人工把 AI 拉回流程。
+- 工作流提供结构与校验,不能替代项目本身的工程判断。
+- 部署步骤取决于目标项目的技术栈与环境。
 
-## Contributing
+## 参与贡献
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## Release notes
+## 更新日志
 
-See [CHANGELOG.md](./CHANGELOG.md).
+见 [CHANGELOG.md](./CHANGELOG.md)。
 
-## License
+## 许可证
 
-MIT. See [LICENSE](./LICENSE).
-
-Built with the AI Project Workflow.
+MIT,见 [LICENSE](./LICENSE)。

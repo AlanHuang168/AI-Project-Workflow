@@ -7,8 +7,9 @@ import { ROOT } from "../src/lib/path-utils.js";
 import { validateProject } from "../src/lib/validate.js";
 
 const hanPattern = /[\u3400-\u4DBF\u4E00-\u9FFF]/;
-const englishOnlyRoots = ["core", "adapters", "src", "bin", "examples", "AGENTS.md", "CLAUDE.md", "README.md"];
-const chineseReadmeLink = "[中文文档](./README.zh-CN.md)";
+const englishOnlyRoots = ["core", "adapters", "src", "bin", "examples", "AGENTS.md", "CLAUDE.md", "README.en.md"];
+const englishReadmeLink = "[English](./README.en.md)";
+const chineseReadmeLink = "[中文文档](./README.md)";
 
 async function listFiles(path) {
   const entries = await readdir(path, { withFileTypes: true });
@@ -44,19 +45,21 @@ test("core runtime sources contain no Chinese characters", async () => {
   for (const file of await projectFiles(englishOnlyRoots)) {
     const rel = relative(ROOT, file).split("\\").join("/");
     let text = await readFile(file, "utf8");
-    if (rel === "README.md") text = text.replace(chineseReadmeLink, "");
-    if (hanPattern.test(text)) offenders.push(relative(ROOT, file).split("\\").join("/"));
+    // Language switcher link in the English README is allowed to contain Chinese
+    if (rel === "README.en.md") text = text.replace(chineseReadmeLink, "");
+    if (hanPattern.test(text)) offenders.push(rel);
   }
   assert.deepEqual(offenders, []);
 });
 
 test("readme language strategy is explicit", async () => {
   const readme = await readFile(join(ROOT, "README.md"), "utf8");
-  const zhReadme = await readFile(join(ROOT, "README.zh-CN.md"), "utf8");
-  assert.equal(hanPattern.test(readme.replace(chineseReadmeLink, "")), false);
-  assert.equal(hanPattern.test(zhReadme), true);
-  assert.match(readme, /\[中文文档\]\(\.\/README\.zh-CN\.md\)/);
-  assert.match(zhReadme, /\[English\]\(\.\/README\.md\)/);
+  const enReadme = await readFile(join(ROOT, "README.en.md"), "utf8");
+  // Default README is Chinese; English lives in README.en.md
+  assert.equal(hanPattern.test(readme.replace(englishReadmeLink, "")), true);
+  assert.equal(hanPattern.test(enReadme.replace(chineseReadmeLink, "")), false);
+  assert.match(readme, /\[English\]\(\.\/README\.en\.md\)/);
+  assert.match(enReadme, /\[中文文档\]\(\.\/README\.md\)/);
 });
 
 test("CLI help and validation output are English", async () => {
