@@ -15,7 +15,7 @@ const allowedFiles = [
   "AGENTS.md",
   "CLAUDE.md",
   "README.md",
-  "README.zh-CN.md",
+  "README.en.md",
   "CHANGELOG.md",
   "LICENSE",
   "CONTRIBUTING.md",
@@ -77,7 +77,7 @@ test("project has no old source files or stale publish entries", async () => {
 
 test("readme and example only document the Node CLI", async () => {
   const readme = await readFile(join(ROOT, "README.md"), "utf8");
-  const zhReadme = await readFile(join(ROOT, "README.zh-CN.md"), "utf8");
+  const enReadme = await readFile(join(ROOT, "README.en.md"), "utf8");
   const example = await readFile(join(ROOT, "examples", "minimal-project", "README.md"), "utf8");
   const pyCmd = "py" + "thon3";
   const oldRefs = [
@@ -92,9 +92,11 @@ test("readme and example only document the Node CLI", async () => {
 
   for (const ref of oldRefs) {
     assert.equal(readme.includes(ref), false, `README contains ${ref}`);
+    assert.equal(enReadme.includes(ref), false, `README.en contains ${ref}`);
     assert.equal(example.includes(ref), false, `example contains ${ref}`);
   }
   assert.match(readme, /npx @dayahs\/ai-project-workflow init \. --platform cursor/);
-  assert.match(readme, /\[中文文档\]\(\.\/README\.zh-CN\.md\)/);
-  assert.match(zhReadme, /\[English\]\(\.\/README\.md\)/);
+  assert.match(enReadme, /npx @dayahs\/ai-project-workflow init \. --platform cursor/);
+  assert.match(readme, /\[English\]\(\.\/README\.en\.md\)/);
+  assert.match(enReadme, /\[中文文档\]\(\.\/README\.md\)/);
 });

@@ -271,4 +271,4 @@ APW 默认不会覆盖你的已有文件。
 
 每个阶段完成后,都先阅读生成的文档。
 
-熟悉之后,可以继续阅读主 [README](../../README.zh-CN.md) 和 [平台兼容性报告](../testing/compatibility-matrix.md)。
+熟悉之后,可以继续阅读主 [README](../../README.md) 和 [平台兼容性报告](../testing/compatibility-matrix.md)。
